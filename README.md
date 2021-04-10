@@ -10,4 +10,4 @@
 
 [01-crash.md](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/pr%C3%A1cticas/01-crash.md)
 
-[Solución]()
+[Solución](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/entregas/01-crash/README.md)
