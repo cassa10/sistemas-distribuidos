@@ -1,0 +1,3 @@
+-module(crash).
+
+-export([]).
