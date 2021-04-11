@@ -40,7 +40,7 @@ Es necesario empezar por el Nodo-A.
 ```
 
 Donde: 
-* *NodeA* es un string que identifica el nodo A. (Se puede obtener, utilizando la funcion ```node()``` dentro del nodo) 
+* *NodeA* es un string que identifica el nodo A. (Este dato se puede obtener, utilizando la funcion ```node()``` dentro del nodo al que se le va a enviar los mensajes) 
 
 * *N* es un numero, el cual va a ser la cantidad de pings que se van a mandar al NodoA.
 
@@ -52,7 +52,7 @@ Ejemplo:
 
 ## Problemas
 
-* Siempre hay que inicializar primero el nodo A junto la funcion start_pong(), para que el proceso del Nodo-B no quede obsoleto. Habria que buscar una forma de sincronizacion, cuando sucede este caso.
+* Siempre hay que inicializar primero el nodo A junto la funcion start_pong(), para que el proceso del Nodo-B no quede obsoleto/perdido. Habria que buscar una forma de sincronizacion, cuando sucede este caso.
 
 
 
