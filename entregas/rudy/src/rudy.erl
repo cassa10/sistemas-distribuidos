@@ -38,5 +38,5 @@ request(Client) ->
 
 reply({{get, URI, _}, _, _}) ->
     %timer:sleep(40),
-    http:ok("URI: " ++ URI ++ ". Sarasa").
+    http:ok("URI: " ++ URI).
 
