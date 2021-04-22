@@ -46,7 +46,7 @@ los tiempos de respuesta empeoran aún más.
 
 ### Benchmarks
 
-TODO
+![benchmarks image](./benchmarks.png)
 
 ## Discusión
 
