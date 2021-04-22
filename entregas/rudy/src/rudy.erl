@@ -18,7 +18,7 @@ init(Port) ->
 handler(Listen) ->
     case gen_tcp:accept(Listen) of
         {ok, Client} ->
-            spawn(fun() -> request(Client), end);
+            spawn(fun() -> request(Client) end);
         {error, Error} ->
             request(Error)
     end,
