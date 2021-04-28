@@ -16,6 +16,8 @@ consumer(N, Producer, Monitor) ->
             validateNumbers(N, M),
             consumer(N+1, Producer, Monitor);
         bye ->
+            died.
+        stop ->
             Producer ! consumerDie;
         {'DOWN', Monitor, process, Object, Info} ->
             io:format("~w died; ~w~n", [Object, Info]),
@@ -23,7 +25,7 @@ consumer(N, Producer, Monitor) ->
     end.
 
 stop() ->
-    consumer ! bye.
+    consumer ! stop.
 
 validateNumbers(N, M) -> 
     if
