@@ -61,5 +61,3 @@ Se recibió un 'DOWN' en un momento, y despues se empezo a recibir mensajes deso
 ### 7. ¿Qué dice el manual acerca de las garantías de envíos de mensajes?
 
 Se puede asumir que los mensajes se encolan en el orden en que llegaron a su destino, pero eso no significa que mensajes que se hayan enviado de una máquina a otra lleguen efectivamente a destino. En otras palabras, es posible que se pierdan mensajes en la comunicación.
-
-Se puede asumir que los mensajes se encolan en el orden en que llegaron a su destino, pero eso no implica que los mensajes que se hayan enviado de una máquina a otra, lleguen a su destino correctamente. Es decir, que es posible que se pierdan mensajes en la comunicación.
