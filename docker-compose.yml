@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+  erlang:
+    build: .
+    image: ubuntu/erlang
+    container_name: erlang
+    volumes:
+      - .:/sistemas-distribuidos
