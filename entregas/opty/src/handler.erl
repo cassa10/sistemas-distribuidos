@@ -7,7 +7,7 @@ start(Client, Validator, Store) ->
 init(Client, Validator, Store) ->
     handler(Client, Validator, Store, [], []).
 
- handler(Client, Validator, Store, Reads, Writes) ->
+handler(Client, Validator, Store, Reads, Writes) ->
     receive
         {read, Ref, N} ->
             case lists:keysearch(N, 1, Writes) of
@@ -15,15 +15,16 @@ init(Client, Validator, Store) ->
                     Client ! {Ref, Value},
                     handler(Client, Validator, Store, Reads, Writes);
                 false ->
-                        %TODO:
-                        %TODO:
+                    Entry = store:lookup(N, Store),
+                    Entry ! {read, Ref, self()},
                     handler(Client, Validator, Store, Reads, Writes)
             end;
         {Ref, Entry, Value, Time} ->
-                %TODO:
-            handler(Client, Validator, Store, [...|Reads], Writes);
+            Client ! {Ref, Value},
+            handler(Client, Validator, Store, [{Entry, Time} | Reads], Writes);
         {write, N, Value} ->
-            %TODO: Added = [{N, ..., ...}|...],
+            Entry = store:lookup(N, Store),
+            Added = [{N, Entry, Value}|Writes],
             handler(Client, Validator, Store, Reads, Added);
         {commit, Ref} ->
             Validator ! {validate, Ref, Reads, Writes, Client};

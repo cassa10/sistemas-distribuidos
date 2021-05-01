@@ -49,6 +49,7 @@ check_reads(N, Tag) ->
             end
     end.
 
-%TODO:
 update(Writes) ->
+    lists:map(fun({_, Entry, Value}) -> Entry ! {write, Value} end, Writes),
+    ok. % avoid return list
     

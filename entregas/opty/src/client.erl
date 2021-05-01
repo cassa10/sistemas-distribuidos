@@ -12,7 +12,6 @@ read(Handler, N) ->
 write(Handler, N, Value) ->
     Handler ! {write, N, Value}.
 
-%TODO:
 commit(Handler) ->
     Ref = make_ref(),
     Handler ! {commit, Ref},

@@ -19,12 +19,11 @@ open(Server) ->
 server(Validator, Store) ->
     receive
         {open, Client} ->
-            %TODO:
+            Client ! {transaction, Validator, Store},
             server(Validator, Store);
         stop ->
-                store:stop(Store)
+            store:stop(Store)
     end.
 
-%TODO:
 stop(Server) ->
-    
+    Server ! stop.
