@@ -16,7 +16,7 @@ startServer(N) ->
     register(server, server:start(N)).
     
 startClient(ResultsCollector, M) ->
-    {_, _, Start} = os:timestamp(),
+    Start = erlang:system_time(milli_seconds),
     Handler = server:open(server),
     Algorithm = exs64,
     rand:seed(Algorithm),
@@ -32,11 +32,11 @@ startClient(ResultsCollector, M) ->
     %Read3 = 
         client:read(Handler, Random2),
     Status = client:commit(Handler),
-    {_, _, End} = os:timestamp(),
+    End = erlang:system_time(milli_seconds),
     %io:format("Read1: ~w~nRead2: ~w~nRead3: ~w~n", [Read1, Read2, Read3]),
     %io:format("PID ~p Status ~p ~n", [self(), Status]),
-    %io:format("PID ~p ends with ~p ms. ~n", [self(), (End - Start) / 1000]),
-    ResultsCollector ! { self(), Status, (End - Start) / 1000 }.
+    %io:format("PID ~p ends with ~p ms. ~n", [self(), (End - Start)]),
+    ResultsCollector ! { self(), Status, (End - Start) }.
     
 startClients(M, N) -> 
     ResultsCollector = self(),

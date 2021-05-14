@@ -29,7 +29,19 @@ Una de las dificultades que tuvimos fue simular el caso de que varios clientes q
 
 ### Performance
 
-La performance del servidor varía dependiendo de cuántos más clientes hay, más tarda en responder a cada uno. El tamaño del store deducimos que no influye en estos tiempos de respuesta. Un test con 100000 procesos demora aproximadamente entre 280-310 ms aproximadamente en completarse cada uno.
+La performance del servidor varía dependiendo de cuántos más clientes hay, más tarda en responder a cada uno. El tamaño del store deducimos que no influye en estos tiempos de respuesta.
+
+
+| Caso | Storage | Clientes Concurrentes | Tiempo Res Promedio | Cant. Rechazados |  Cant. Exitosos    |
+|------|---------|----------|---------------------|------------------|--------------------|
+|#1| 20 | 100 | 3.97ms | 83 | 17 |
+|#2| 100 | 100 | 3ms | 46 | 54 |
+|#3| 600 | 100  | 4.92ms | 8 | 92 |
+|#4| 200 | 10000 | 177.34ms | 8231 | 1769 |
+|#5| 5000 | 10000 | 169.86ms | 1561 | 8439 |
+|#6| 10000 | 10000 | 201.13ms | 5  | 9995 |
+
+----------------------------
 
 ### Limitaciones
 
