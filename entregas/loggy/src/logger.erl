@@ -21,3 +21,5 @@ loop() ->
 
 log(From, Time, Msg) ->
     io:format("log: ~w ~w ~p~n", [Time, From, Msg]).
+
+%TODO: Implement Clock and Queue
