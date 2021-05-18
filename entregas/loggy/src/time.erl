@@ -1,4 +1,4 @@
--module(test).
+-module(time).
 -export([zero/0, inc/2, merge/2, leq/2]).
 
 %zero(): retorna un valor Lamport inicial (puede ser 0).
