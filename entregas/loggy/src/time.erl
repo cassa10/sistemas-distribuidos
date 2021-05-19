@@ -1,5 +1,5 @@
 -module(time).
--export([zero/0, inc/2, merge/2, leq/2]).
+-export([zero/0, inc/2, merge/2, leq/2, clock/1, update/3, safe/2]).
 
 %zero(): retorna un valor Lamport inicial (puede ser 0).
 zero() -> 0.

@@ -1,6 +1,8 @@
 -module(test).
 -export([run/2]).
 
+%TODO: verify order
+
 %report on your initial observations
 run(Sleep, Jitter) ->
     Log = logger:start([john, paul, ringo, george]),
