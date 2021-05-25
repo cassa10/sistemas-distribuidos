@@ -16,16 +16,15 @@ loop(Queue, Clock) ->
     receive
         {log, From, Time, Msg} ->
             UpdatedClock = time:update(From, Time, Clock),
-            UpdatedQueue = case time:safe(Time, UpdatedClock) of
+            UpdatedQueue = queue:in({From, Time, Msg}, Queue),
+            FilteredQueue = case time:safe(Time, UpdatedClock) of
                 true -> 
-                    log(From, Time, Msg),
-                    logAllSafeMsg(Time, Queue),
-                    %return a queue
-                    filterUnsafeMsg(Time, Queue);
+                    logAllSafeMsg(Time, UpdatedQueue),
+                    filterUnsafeMsg(Time, UpdatedQueue);
                 false ->
-                    queue:in({From, Time, Msg}, Queue)
+                    UpdatedQueue
             end,
-            loop(UpdatedQueue, UpdatedClock);
+            loop(FilteredQueue, UpdatedClock);
          stop ->
             logAll(Queue),
             ok
