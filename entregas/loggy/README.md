@@ -53,5 +53,6 @@ Nos encontramos con un bug cuando ejecutamos la prueba que se nos dio. Este bug 
 
 # Vectores de relojes
 
-¿Qué diferencias habrían si se hubieran utilizado vectores de relojes?
+Si bien con relojes lógicos de Lamport se logra ordenar los mensajes, el orden que propone sobre los mensajes implica que existan mensajes que podrían ser impresos, al no verse afectados entre sí, pero que la implementación simple con estos relojes no permite detectar.
 
+Una mejora sobre esto es la utilizacion de relojes vectoriales, que propone un orden parcial sobre los mensajes. De esta manera, un mensaje va a esperar a ser impreso unicamente cuando el mensaje de un nodo que lo involucra todavia no ha llegado al logger. Esto nos muestra mejor la dependencia que existe entre los distintos nodos, y como se afectan entre si.
