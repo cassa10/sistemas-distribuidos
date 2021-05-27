@@ -27,8 +27,7 @@ Siempre es verdadero que los mensajes de un determinado worker va a estar ordena
 
 ¿Cómo sabemos si los mensajes son seguros de imprimir?
 
-Podríamos, siempre que recibimos un mensaje de "recieved" esperar por uno de "sending", y luego ordenar los logs por tiempo. Sin embargo, ...
-no podemos garantizar que todos los workers hayan enviado rápidamente los logs y estos se impriman correctamente ordenados. Esto último, se solucionará con lo propuesto más adelante.
+Podríamos, siempre que recibimos un mensaje de "recieved" esperar por uno de "sending", y luego ordenar los logs por tiempo. Sin embargo, no podemos garantizar que todos los workers hayan enviado rápidamente los logs y estos se impriman correctamente ordenados. Esto último, se solucionará con lo propuesto más adelante.
 
 # Reporte del módulo time y cola de retención:
 
