@@ -1,0 +1,3 @@
+-module(muty).
+
+-export([]).

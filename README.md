@@ -29,3 +29,7 @@ Las soluciones a las practicas se encuentran en el directorio *"entregas"*.
 ### 4. [Opty](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/pr%C3%A1cticas/16-opty.md) => [Solución](https://gitlab.com/cassa10/sistemas-distribuidos/-/tree/master/entregas/opty)
 
 ### 5.[Loggy](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/pr%C3%A1cticas/09-loggy.md) => [Solución](https://gitlab.com/cassa10/sistemas-distribuidos/-/tree/master/entregas/loggy)
+
+### 6.[Muty](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/pr%C3%A1cticas/12-muty.md) => [Solución](https://gitlab.com/cassa10/sistemas-distribuidos/-/tree/master/entregas/muty)
+
+### 7.[Toty](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/pr%C3%A1cticas/11-toty.md) => [Solución](https://gitlab.com/cassa10/sistemas-distribuidos/-/tree/master/entregas/toty) [Sin implementar]
