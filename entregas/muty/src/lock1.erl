@@ -27,10 +27,10 @@ open(Nodes) ->
 
 requests(Nodes) ->
     lists:map(fun(P) ->
-                        R = make_ref(), 
-                        P ! {request, self(), R},
-                        R
-                end, Nodes).
+        R = make_ref(), 
+        P ! {request, self(), R},
+        R
+    end, Nodes).
 
 wait(Nodes, Master, [], Waiting) ->
     Master ! taken,
@@ -49,7 +49,9 @@ wait(Nodes, Master, Refs, Waiting) ->
     end.
 
 ok(Waiting) ->
-    lists:foreach(fun({F,R}) -> F ! {ok, R} end, Waiting).
+    lists:foreach(fun({F,R}) -> 
+        F ! {ok, R} 
+    end, Waiting).
 
 held(Nodes, Waiting) ->
     receive
