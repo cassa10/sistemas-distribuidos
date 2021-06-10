@@ -65,4 +65,3 @@ held(Id, Nodes, Waiting) ->
             ok(Waiting),
             open(Id, Nodes)
     end.
-%muty:start(lock2, 5000, 6000).

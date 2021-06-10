@@ -20,7 +20,7 @@ open(Time, Nodes) ->
             Refs = requests(UpdateTime, Nodes),
             wait(UpdateTime, Nodes, Master, Refs, []);
         {request, TimeFrom, From, Ref} ->
-            From ! {ok, Ref},
+            From ! {ok, Time, Ref},
             UpdateTime = time:merge(Time, TimeFrom),
             open(UpdateTime, Nodes);
         stop ->
@@ -46,20 +46,21 @@ wait(Time, Nodes, Master, Refs, Waiting) ->
                 true  -> 
                     wait(UpdateTime, Nodes, Master, Refs, [{From, Ref}|Waiting]);
                 false -> 
-                    From ! {ok, Ref},
+                    From ! {ok, Time, Ref},
                     wait(UpdateTime, Nodes, Master, Refs, Waiting)
             end;
-        {ok, Ref} ->
+        {ok, TimeFrom, Ref} ->
+            UpdateTime = time:merge(Time, TimeFrom),
             Refs2 = lists:delete(Ref, Refs),
-            wait(Time, Nodes, Master, Refs2, Waiting);
+            wait(UpdateTime, Nodes, Master, Refs2, Waiting);
         release ->
-            ok(Waiting),
+            ok(Time, Waiting),
             open(Time, Nodes)
     end.
 
-ok(Waiting) ->
+ok(Time, Waiting) ->
     lists:foreach(fun({F,R}) -> 
-        F ! {ok, R} 
+        F ! {ok, Time, R} 
     end, Waiting).
     
 held(Time, Nodes, Waiting) ->
@@ -68,6 +69,6 @@ held(Time, Nodes, Waiting) ->
             UpdateTime = time:merge(Time, TimeFrom),
             held(UpdateTime, Nodes, [ {From, Ref} | Waiting ]);
         release ->
-            ok(Waiting),
+            ok(Time, Waiting),
             open(Time, Nodes)
     end.
