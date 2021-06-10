@@ -16,7 +16,7 @@ open(Id, Nodes) ->
     receive
         {take, Master} ->
             Refs = requests(Id, Nodes),
-            wait(Nodes, Id, Master, Refs, []);
+            wait(Id, Nodes, Master, Refs, []);
         {request, From, _, Ref} ->
             From ! {ok, Ref},
             open(Id, Nodes);
@@ -41,7 +41,9 @@ wait(Id, Nodes, Master, Refs, Waiting) ->
             wait(Id, Nodes, Master, Refs, [{From, Ref}|Waiting]);
         {request, From, FromId, Ref} when FromId < Id ->
             From ! {ok, Ref},
-            wait(Id, Nodes, Master, Refs, Waiting);
+            NewRef = make_ref(),
+            From ! {request, self(), Id, NewRef},
+            wait(Id, Nodes, Master, [NewRef | Refs], Waiting);
         {ok, Ref} ->
             Refs2 = lists:delete(Ref, Refs),
             wait(Id, Nodes, Master, Refs2, Waiting);
@@ -63,3 +65,4 @@ held(Id, Nodes, Waiting) ->
             ok(Waiting),
             open(Id, Nodes)
     end.
+%muty:start(lock2, 5000, 6000).
