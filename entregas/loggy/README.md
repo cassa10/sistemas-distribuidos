@@ -50,6 +50,7 @@ Con respecto al tamaño de la cola de retención encontramos que cuando menor se
 
 Nos encontramos con un bug cuando ejecutamos la prueba que se nos dio. Este bug consiste en que había un log que no se imprimía en orden junto a todos los logs seguros. Por suerte, gracias a la ayuda de los profesores, nos pudimos dar cuenta de que era un log que se imprimía sin ordenarse en la cola pendiente de mensajes. Por lo tanto, lo pudimos solucionar rápidamente.
 
+Otra dificultad que encontramos fue que los mensajes dentro del log estaban ordenados por tiempo, pero no semanticamente, es decir, los mensajes de received podrian estar antes que los de sending. Modificando la funcion de sort que cuando los tiempos logicos son iguales desempate por este mensaje y que si es `sending` vaya primero.
 
 # Vectores de relojes
 
