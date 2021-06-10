@@ -43,10 +43,36 @@ No encontramos grandes cambios de eficiencia en comparación a la implementació
 
 # Lock 3
 
+Cada lock ahora tendrá un reloj de Lamport. Así al enviar un request, un lock aumenta su reloj, y al recibirlos lo actualiza. El reloj mayor será el que se guarde en este caso.
+
+Cuando recibimos un request, tenemos que decidir si nuestro pedido tiene
+un tiempo menor al del otro. De ser así, lo hacemos esperar. Caso contrario, cuando
+es menor el del otro, le damos un `ok`. Si llegan a ser iguales, desempatamos por
+`Id`.
+
+¿Puede darse la situación en que un worker no se le da prioridad al lock a pesar
+de que envió el request a su lock con un tiempo lógico anterior al worker que lo
+consiguió?. 
+
+Es posible, dado que otro lock con tiempo mayor obtuvo primero
+los permisos, y el anterior no llegó a consultar a todos los que debía
+a tiempo. La eficiencia obtenida fue similar a la anterior, dado que decidimos tener
+relojes de Lamport que son simplemente un número.
+
 
 
 # Problemas
 
+En el lock 2, un problema que tuvimos fue que en el estado de waiting solo enviamos ok al proceso con Id prioritario que envió el request, y esto provocaba que varios workers puedan ingresar en la zona critica al mismo tiempo.
+
+Recordando lo que se explicó y discutió en clase, recordamos que teníamos que además de enviarle el ok al proceso con mayor prioridad, también debíamos enviarle un nuevo request a este. Al agregar estas líneas de código, pudimos solucionar el problema que teníamos que varios workers entraban a la sección crítica concurrentemente.
 
 # Conclusión
 
+Las implementaciones en general resultaron similares y algunas triviales.
+
+Aprendimos sobre comunicacion multicast, y un algoritmo de lock distribuido. Nosotros pensabamos que los locks debian ser centralizados, pero es posible hacerlo distribuido, siempre y cuando, tengamos en claro que va a tener una complejidad extra y algunos trade-offs.
+
+Nosotros deducimos que la mejor implementacion es la ultima, la de los relojes Lamport, ya que prioriza al que primero que pide permiso. La segunda implementacion no nos parece una buena implementacion porque los locks con menor prioridad pueden no ejecutar nunca y darse lo que se conoce como starvation.
+
+Hicimos varias pruebas, y la GUI nos facilito bastante el verificar cuando un lock nos funcionaba correctamente o no (cuando dos workers tenia color rojo, deduciamos que estaba mal el Lock). Igualmente, nos costo mucho debuggear cuando no funcionaba algun lock.
