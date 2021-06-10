@@ -41,7 +41,25 @@ filterUnsafeMsg(TimeToFilter, Queue) ->
     queue:filter(fun({ _, Time, _}) -> not time:leq(Time, TimeToFilter) end, Queue).
 
 sortQueue(Queue) ->
-    lists:sort(fun({_, T1, _}, {_, T2, _}) -> time:leq(T1, T2) end, queue:to_list(Queue)).
+    lists:sort(fun({_, T1, Msg1}, {_, T2, _}) -> orderByLessTimeAndUntieSending(T1, T2, Msg1) end, queue:to_list(Queue)).
 
 logAll(Queue) ->
     lists:foreach(fun({ From, T, Msg}) -> log(From, T, Msg) end, sortQueue(Queue)).
+
+orderByLessTimeAndUntieSending(T1, T2, Msg1) ->
+    case time:leq(T1, T2) of
+        true -> untie(T1, T2, Msg1);
+        false -> false
+    end.
+
+isNotReceived(Msg) ->
+    case Msg of
+        {received, _} -> false;
+        _ -> true
+    end.
+
+untie(T1, T2, Msg1) ->
+    case T1 == T2 of
+        true -> isNotReceived(Msg1);
+        false -> true
+    end.
