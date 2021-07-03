@@ -47,15 +47,9 @@ numberCategoryMap(N) ->
     end.
 
 
-payCategory(Apuesta, Category) -> 
-    if 
-        Category == par or (Category == impar) -> Apuesta * 2;
-        true -> Apuesta
+payCategory(Apuesta, Category) ->
+    IsDuplicate = lists:member(Category, [par,impar, rojo, negro, primera_mitad, segunda_docena]),
+    case IsDuplicate of
+        true -> Apuesta * 2;
+        false -> Apuesta * 3
     end.
-
-
-%payCategory(Apuesta, Category) ->
-    %when Category == 
-    %    par, impar, rojo, negro, primera_mitad, segunda_mitad -> Apuesta * 2;
-    %    primera_docena, segunda_docena, primera_columna, segunda_columna, tercera_columna -> Apuesta * 3;    
-    %end.
