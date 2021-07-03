@@ -16,6 +16,11 @@
 
 - `rebar3 new lib <project_name>`
 
+
+## Trabajo Práctico Final
+
+### [Ruleta](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/entregas/ruleta)
+
 ## Prácticas
 
 Las soluciones a las practicas se encuentran en el directorio *"entregas"*.
