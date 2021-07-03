@@ -1,8 +1,13 @@
 -module(ruleta).
 
--export([start/0, numberCategoryMap/1, payCategory/2]).
+-export([start/0, girarRuleta/0, numberCategoryMap/1, payCategory/2]).
 
 start() ->
+    % La ruleta tiene una lista de usuarios conectados (limitados a X usuarios) y una lista de apuestas.
+    % En cada tirada se espera 2 minutos:
+    %   1) Si no hay nadie, vuelve a esperar;
+    %   2) Si hay minimo un usuario conectado, empieza a ruletear.
+    % Apuesta = { nombre_usuario, PID_usuario, Apuesta_usuario, Category || Numero }
     ok.
 
 numberCategoryMap(N) ->
@@ -53,3 +58,7 @@ payCategory(Apuesta, Category) ->
         true -> Apuesta * 2;
         false -> Apuesta * 3
     end.
+
+
+girarRuleta() ->
+    rand:uniform(37) - 1.
