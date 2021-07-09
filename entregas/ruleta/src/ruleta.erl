@@ -1,13 +1,16 @@
 -module(ruleta).
 
--export([start/0, girarRuleta/0, numberCategoryMap/1, payCategory/2]).
+-export([init/2, numberCategoryMap/1, esperarApuestas/4, 
+    empezarRonda/3, cobrarOPagarApuestas/2, informarPerdida/2, 
+    esGanador/2, pagarApuesta/3, pagarNumero/1, pagarCategoria/2, girarRuleta/0]).
 
 slaveMode(Peers) ->
-    receive
-        %{backup, ...data} ->  ..., slaveMode(Peers);
-        %{masterDown, } -> ..., esperarApuestas([], [], 120);
-        %...
-    end
+    % receive
+    %     %{backup, ...data} ->  ..., slaveMode(Peers);
+    %     %{masterDown, } -> ..., esperarApuestas([], [], 120);
+    %     %...
+    % end.
+    not_implemented.
 
 init(IsMaster, Peers) ->
     %Ver como hacer cuando hay slaves y que vayan guardando todos los datos a partir del envio de mensajes.
@@ -23,7 +26,7 @@ esperarApuestas(Peers, UsuariosConectados, ApuestasDeUsuarios, TiempoRestante) -
     %   1) Si no hay nadie, vuelve a esperar;
     %   2) Si hay minimo un usuario conectado, empieza a ruletear.
     % Apuesta = { nombre_usuario, PID_usuario, Apuesta_usuario, Category || Numero }
-    Start = erlang:system_time(seconds)
+    Start = erlang:system_time(seconds),
 
     %Chequear si algun usuario conectado esta muerto?
 
@@ -33,27 +36,27 @@ esperarApuestas(Peers, UsuariosConectados, ApuestasDeUsuarios, TiempoRestante) -
             UsuariosConectadosUpdated = [NodoUsuario | UsuariosConectados],
             TiempoTranscurrido = erlang:system_time(seconds) - Start,
             %Backup_slaves
-            esperarApuestas(UsuariosConectadosUpdated, ApuestasDeUsuarios, TiempoRestante - TiempoTranscurrido);
+            esperarApuestas(Peers, UsuariosConectadosUpdated, ApuestasDeUsuarios, TiempoRestante - TiempoTranscurrido);
         {apostar, Apuesta} ->
             %evaluar si el usuarios pertenece a los que estan conectados...
             ApuestasDeUsuariosUpdated = [Apuesta | ApuestasDeUsuarios],
             TiempoTranscurrido = erlang:system_time(seconds) - Start,
             %Backup_slaves
-            esperarApuestas(UsuariosConectados, ApuestasDeUsuariosUpdated, TiempoRestante - TiempoTranscurrido);
+            esperarApuestas(Peers, UsuariosConectados, ApuestasDeUsuariosUpdated, TiempoRestante - TiempoTranscurrido)
         after TiempoRestante ->
             fin_espera
             %Backup_slaves?
     end,
     case ApuestasDeUsuarios of
-        [] -> esperarApuestas(UsuariosConectados, ApuestasDeUsuarios, 120);
-        _  -> empezarRonda(UsuariosConectados, ApuestasDeUsuarios)
+        [] -> esperarApuestas(Peers, UsuariosConectados, ApuestasDeUsuarios, 120);
+        _  -> empezarRonda(Peers, UsuariosConectados, ApuestasDeUsuarios)
     end.
 
-empezarRonda(UsuariosConectados, ApuestasDeUsuarios) ->
+empezarRonda(Peers, UsuariosConectados, ApuestasDeUsuarios) ->
     NumeroGanador = girarRuleta(),
     %Ver de hacer un backup en los slaves, por cada apuesta pagada y luego filtrarlos.
     cobrarOPagarApuestas(NumeroGanador, ApuestasDeUsuarios),
-    esperarApuestas(UsuariosConectados, [], 120).
+    esperarApuestas(Peers, UsuariosConectados, [], 120).
 
 numberCategoryMap(N) ->
     case N of
@@ -100,7 +103,7 @@ numberCategoryMap(N) ->
 cobrarOPagarApuestas(NumeroGanador, Apuestas) ->
     lists:foreach(
         fun ({ _, NodoUsuario, DineroApostado, CategoriaONumero}) ->  
-            case esGanador(CategoriaONumero) of
+            case esGanador(NumeroGanador, CategoriaONumero) of
                 true -> pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero);
                 false -> informarPerdida(NodoUsuario, DineroApostado)
             end
@@ -122,7 +125,7 @@ pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero) ->
         {numero, _} ->  
             Recompenza = pagarNumero(DineroApostado);
         _ -> 
-            Recompenza = pagarCategoria(DineroApostado, CategoriaONumero),
+            Recompenza = pagarCategoria(DineroApostado, CategoriaONumero)
     end,
     NodoUsuario ! {ganancia, Recompenza}.
 
