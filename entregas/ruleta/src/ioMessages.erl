@@ -9,7 +9,7 @@ mensajePrincipal(NombreUsuario, Apuestas) ->
     "Usuario: " ++ NombreUsuario ++ "\n" ++
     "Apuestas actuales: " ++ formatApuestas(Apuestas) ++ "\n\n" ++
     "Selecciona\n" ++
-		"1. Apostar" ++
+		"1. Apostar\n" ++
 		"2. Deshacer apuestas\n" ++
 		"3. Mandar apuestas\n" ++
 		"\n0. Salir\n" ++
