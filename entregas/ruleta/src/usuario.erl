@@ -1,18 +1,13 @@
 -module(usuario).
 
--export([init/2, salir/0, manejarInputUsuario/4, elegirApuesta/3, obtenerValorApuesta/1, obtenerApuestaPorCategoria/3, validarValorApuesta/1, mandarApuestas/2, esperarFinRonda/2]).
+-export([init/2, salir/0, manejarInputUsuario/4, elegirApuesta/3, obtenerValorApuesta/1, 
+    obtenerApuestaPorCategoria/3, mandarApuestas/3, esperarFinRonda/2]).
 
 init(Servers, NombreUsuario) ->
     manejarInputUsuario(Servers, NombreUsuario, [], ioMessages:mensajePrincipal(NombreUsuario, [])).
 
 salir() ->
-    exit.
-
-borrarApuestas(Servers, NombreUsuario, Apuestas) -> ok.
-mandarApuestas(Servers, NombreUsuario, Apuestas) -> ok.
-manejarInputUsuario() -> ok.
-obtenerApuestaPorPleno() -> ok.
-agregarApuestaEnMisApuestas(A, B) -> ok.
+    ok.
 
 manejarInputUsuario(Servers, NombreUsuario, Apuestas, ReadMessage) ->
     %Generar Inputs de usuario (IO), donde:
@@ -29,29 +24,29 @@ manejarInputUsuario(Servers, NombreUsuario, Apuestas, ReadMessage) ->
             mandarApuestas(Servers, NombreUsuario, Apuestas);
         % 0. Salir
         {ok, 0} -> salir();
-        _       -> manejarInputUsuario(Servers, NombreUsuario, Apuestas, "Input invalido! Por favor, ingresa un valor entre 0 al 3")
+        _       ->
+            manejarInputUsuario(Servers, NombreUsuario, Apuestas, ioMessages:errorOpcionInvalidaHome())
     end.
 
 elegirApuesta(Servers, NombreUsuario, Apuestas) ->
     %Manejar inputs apuesta: categoria o pleno(numero).
-    case io:read(ioMessages:mensajeApuesta(Apuestas)) of
+    case io:read(ioMessages:mensajeApuesta()) of
         % 1. Categorias
         {ok, 1} ->
             Apuesta = {obtenerApuestaPorCategoria(Servers, NombreUsuario, Apuestas), obtenerValorApuesta(Apuestas)},
-            agregarApuestaEnMisApuestas(Apuestas, Apuesta),
-            manejarInputUsuario();
+            ApuestasNew = agregarApuestaEnMisApuestas(Apuestas, Apuesta),
+            manejarInputUsuario(Servers, NombreUsuario, ApuestasNew, ioMessages:mensajePrincipal(NombreUsuario, ApuestasNew));
         % 2. Pleno (Numero)
         {ok, 2} ->
             Apuesta = obtenerApuestaPorPleno(),
-            agregarApuestaEnMisApuestas(Apuestas, Apuesta),
-            manejarInputUsuario();
+            ApuestasNew = agregarApuestaEnMisApuestas(Apuestas, Apuesta),
+            manejarInputUsuario(Servers, NombreUsuario, ApuestasNew, ioMessages:mensajePrincipal(NombreUsuario, ApuestasNew));
         % 0. Atras
-        {ok, 0} -> manejarInputUsuario(Servers, NombreUsuario, Apuestas, "Volvio para atras")
-    end,
-    %Validar CategoriaONumero y Apuesta
-    %Appendear la apuesta a lista de apuestas a realizar
-
-    ok.
+        {ok, 0} -> manejarInputUsuario(Servers, NombreUsuario, Apuestas, ioMessages:mensajePrincipal(NombreUsuario, Apuestas));
+        _       -> 
+            io:format(ioMessages:errorOpcionInvalida()),
+            elegirApuesta(Servers, NombreUsuario, Apuestas)
+    end.
 
 obtenerApuestaPorCategoria(Servers, NombreUsuario, Apuestas) ->
     %Manejar inputs de categoria.
@@ -64,37 +59,65 @@ obtenerApuestaPorCategoria(Servers, NombreUsuario, Apuestas) ->
         {ok, 6} -> segunda_mitad;
         {ok, 7} -> primera_docena;
         {ok, 8} -> segunda_docena;
-        {ok, 0} -> elegirApuesta(Servers, NombreUsuario, Apuestas)
+        {ok, 9} -> tercera_docena;
+        {ok, 10} -> primera_columna;
+        {ok, 11} -> segunda_columna;
+        {ok, 12} -> tercera_columna;
+        %Atras
+        {ok, 0} -> elegirApuesta(Servers, NombreUsuario, Apuestas);
+        _       -> 
+            io:format(ioMessages:errorOpcionInvalida()),
+            obtenerApuestaPorCategoria(Servers, NombreUsuario, Apuestas)
     end.
 
 obtenerValorApuesta(Apuestas) ->
-    Valor = io:read(ioMessages:mensajeDarValorApuesta(Apuestas)),
-    %Validar valor (no negativo), en caso de que si volver a hacer el io:read?
-    case validarValorApuesta(Valor) of
-        true  -> Valor;
-        false ->
-            %LOG ERROR y volver a tomar otro valor
+    Input = io:get_line(ioMessages:mensajeDarValorApuesta(Apuestas)),
+    case string:to_integer(Input) of
+        {error, _} -> 
+            io:format(ioMessages:errorValorApuesta()),
+            obtenerValorApuesta(Apuestas);
+        {Value, _} when Value > 0 -> Value;
+        _ -> 
+            io:format(ioMessages:errorValorApuesta()),
             obtenerValorApuesta(Apuestas)
     end.
 
-validarValorApuesta(Valor) ->
-    case Valor of
-        %TODO: Verificar si N lo toma como String o que?? ver lo de list_to_integer
-        {ok, N} when N >= 0 -> true;
-        _ -> false
-    end.
-
-mandarApuestas(Servers, Apuestas) ->
-    %Server ! {NombreUsuario, self(), [{Apuesta, CategoriaONumero}, ...]}
-    esperarFinRonda(Servers, "Carlos__").
+mandarApuestas(Servers, NombreUsuario, Apuestas) ->
+    %Server = Get_Server(Servers),
+    %Server ! {NombreUsuario, self(), Apuestas},
+    %LOGEAR APUESTAS QUE SE VAN A ENVIAR.
+    esperarFinRonda(Servers, NombreUsuario).
 
 esperarFinRonda(Servers, NombreUsuario) ->
     receive
         {ganancia, N} ->
             %LOG GANANCIA
-            manejarInputUsuario(Servers, NombreUsuario, [], N)
-        after 10 ->
-            %LOADING... en input
+            io:format(ioMessages:mensajeGanancia(N)),
+            manejarInputUsuario(Servers, NombreUsuario, [], ioMessages:mensajePrincipal(NombreUsuario, []))
+        after 15 ->
+            io:format(ioMessages:mensajeCargando()),
             esperarFinRonda(Servers, NombreUsuario)
     end.
 
+borrarApuestas(Servers, NombreUsuario, Apuestas) ->
+    case io:read(ioMessages:mensajeConfirmacion()) of
+        % 1. YES
+        {ok, 1} -> manejarInputUsuario(Servers, NombreUsuario, [], ioMessages:mensajePrincipal(NombreUsuario, []));
+        % cualquier otra cosa NO 
+        _ -> manejarInputUsuario(Servers, NombreUsuario, Apuestas, ioMessages:mensajePrincipal(NombreUsuario, Apuestas))
+    end.
+
+obtenerApuestaPorPleno() ->     
+    Input = io:get_line(ioMessages:mensajeDarValorPleno()),
+    case string:to_integer(Input) of
+        {error, _} -> 
+            io:format(ioMessages:errorValorPleno()),
+            obtenerApuestaPorPleno();
+        {Value, _} when Value >= 0, Value =< 36 -> Value;
+        _ -> 
+            io:format(ioMessages:errorValorPleno()),
+            obtenerApuestaPorPleno()
+    end.
+
+agregarApuestaEnMisApuestas(Apuestas, Apuesta) -> 
+    [Apuesta | Apuestas].
