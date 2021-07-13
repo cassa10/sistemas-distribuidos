@@ -1,15 +1,15 @@
 -module(ioMessages).
 
--export([formatApuestas/1, mensajePrincipal/2, mensajeApuesta/0, mensajeSeleccionarCategoria/0, 
+-export([formatApuestas/1, mensajePrincipal/2, mensajeApuesta/0, mensajeSeleccionarCategoria/0,
     mensajeDarValorApuesta/0, mensajeDarValorPleno/0, mensajeGanancia/1, mensajeCargando/0, mensajeConfirmacion/0,
     errorValorApuesta/0, errorValorPleno/0, errorOpcionInvalida/0, errorOpcionInvalidaHome/0]).
 
 formatApuestas(Apuestas) ->
-    Apuestas.
+    integer_to_list(lists:foldl(fun(_, X) -> X + 1 end, 0, Apuestas)).
 
 mensajePrincipal(NombreUsuario, Apuestas) ->
     "\nUsuario: " ++ NombreUsuario ++ "\n" ++
-    "Apuestas actuales: " ++ formatApuestas(Apuestas) ++ "\n\n" ++
+    "#Nro Apuestas actuales: " ++ formatApuestas(Apuestas) ++ "\n\n" ++
     "Ingrese\n" ++
 		"1. Apostar\n" ++
 		"2. Deshacer apuestas\n" ++
