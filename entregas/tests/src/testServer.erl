@@ -10,22 +10,22 @@ start(Id, IsMaster) ->
 init(_, IsMaster) ->
     receive
         {peers, Peers} ->
-            initByType(IsMaster, Peers);
+            waitMaster(Peers);
         stop ->
             ok
     end.
 
-initByType(IsMaster, Peers) ->
-    case IsMaster of
-        true -> startMaster(Peers);
-        false -> slaveMode(Peers, esperarApuestas, [])
+waitMaster(IsMaster, Peers) ->
+    receive
+        master -> startMaster(Peers);
+        slave  -> slaveMode(Peers, esperarApuestas, [])
     end.
 
 slaveMode(Peers, EstadoMaster, DataMaster) ->
     receive
         {cambioEstado, NuevoEstado} -> slaveMode(Peers, NuevoEstado, DataMaster);
         {backup, Data} -> slaveMode(Peers, EstadoMaster, Data);
-        {masterDown} -> 
+        masterDown -> 
             case EstadoMaster of 
                 esperarApuestas -> esperarApuestas(Peers, DataMaster);
                 imprimirApuestas -> imprimirApuestas(Peers, DataMaster)
