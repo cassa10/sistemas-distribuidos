@@ -6,8 +6,9 @@
 
 slaveMode(Peers) ->
     % receive
+    %     %{cambioEstado, estado} -> 
     %     %{backup, ...data} ->  ..., slaveMode(Peers);
-    %     %{masterDown, } -> ..., esperarApuestas([], [], 120);
+    %     %{masterDown} -> ..., esperarApuestas(....);
     %     %...
     % end.
     not_implemented.
