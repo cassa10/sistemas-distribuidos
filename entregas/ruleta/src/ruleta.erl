@@ -1,7 +1,7 @@
 -module(ruleta).
 
--export([init/2, numberCategoryMap/1, esperarApuestas/4, 
-    empezarRonda/3, cobrarOPagarApuestas/2, informarPerdida/2, 
+-export([init/2, numberCategoryMap/1, esperarApuestas/4,
+    empezarRonda/3, cobrarOPagarApuestas/2, informarPerdida/2,
     esGanador/2, pagarApuesta/3, pagarNumero/1, pagarCategoria/2, girarRuleta/0]).
 
 slaveMode(Peers) ->
@@ -16,7 +16,7 @@ slaveMode(Peers) ->
 init(IsMaster, Peers) ->
     %Ver como hacer cuando hay slaves y que vayan guardando todos los datos a partir del envio de mensajes.
     case IsMaster of
-        true -> esperarApuestas(Peers, [], [], 120);
+        true -> esperarApuestas(Peers, [], [], 30000);
         false -> slaveMode(Peers)
     end.
 
@@ -33,7 +33,7 @@ esperarApuestas(Peers, UsuariosConectados, ApuestasDeUsuarios, TiempoRestante) -
 
     %Hacer if si TiempoRestante es 0 o menor, saltear esto y ir directo al case ApuestasDeUsuarios...
     receive
-        {conectar, NodoUsuario} -> 
+        {conectar, NodoUsuario} ->
             UsuariosConectadosUpdated = [NodoUsuario | UsuariosConectados],
             TiempoTranscurrido = erlang:system_time(seconds) - Start,
             %Backup_slaves
@@ -103,7 +103,7 @@ numberCategoryMap(N) ->
 % Apuesta = { nombre_usuario, PID_usuario, Apuesta_usuario, Category || {numero, Numero} }
 cobrarOPagarApuestas(NumeroGanador, Apuestas) ->
     lists:foreach(
-        fun ({ _, NodoUsuario, DineroApostado, CategoriaONumero}) ->  
+        fun ({ _, NodoUsuario, DineroApostado, CategoriaONumero}) ->
             case esGanador(NumeroGanador, CategoriaONumero) of
                 true -> pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero);
                 false -> informarPerdida(NodoUsuario, DineroApostado)
@@ -123,9 +123,9 @@ esGanador(NumeroGanador, CategoriaONumeroApostado) ->
 
 pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero) ->
     case CategoriaONumero of
-        {numero, _} ->  
+        {numero, _} ->
             Recompenza = pagarNumero(DineroApostado);
-        _ -> 
+        _ ->
             Recompenza = pagarCategoria(DineroApostado, CategoriaONumero)
     end,
     NodoUsuario ! {ganancia, Recompenza}.
