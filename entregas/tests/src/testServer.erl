@@ -1,21 +1,17 @@
 -module(testServer).
 
--export([init/2, start/2, initByType/2, slaveMode/3, startMaster/1, esperarApuestas/2, imprimirApuestas/2, backup/2, cambioEstado/2]).
+-export([init/2, start/2, waitMaster/1, slaveMode/3, startMaster/1, esperarApuestas/2, imprimirApuestas/2, backup/2, cambioEstado/2]).
 
 
-start(Id, IsMaster) ->
-    spawn(fun() -> init(Id, IsMaster) end).
+start(Id, Nodes) ->
+    register(Id, self()),
+    init(Id, Nodes).
 
+init(Id, Nodes) ->
+    io:format("Start Server with id "+ Id +"\n"),
+    waitMaster(Nodes).
 
-init(_, IsMaster) ->
-    receive
-        {peers, Peers} ->
-            waitMaster(Peers);
-        stop ->
-            ok
-    end.
-
-waitMaster(IsMaster, Peers) ->
+waitMaster(Peers) ->
     receive
         master -> startMaster(Peers);
         slave  -> slaveMode(Peers, esperarApuestas, [])
