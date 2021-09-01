@@ -14,6 +14,7 @@ start(Id, Nodes) ->
     monitorNodes(Nodes),
     init(MasterNode, Nodes).
 
+%Cliente = {Id, Node()}
 init(MasterNode, Nodes) ->
     timer:sleep(200),
     receive
@@ -23,6 +24,9 @@ init(MasterNode, Nodes) ->
 
 handlingNodeDown(NodeDown, MasterNode, Nodes) ->
     NodesUp = lists:delete(NodeDown, Nodes),
+    case NodesUp of
+        [] -> error_all_nodes_down
+    end,
     case NodeDown of
         MasterNode ->
             NewMaster = selectMaster(NodesUp),
