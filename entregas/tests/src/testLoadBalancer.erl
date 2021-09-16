@@ -24,12 +24,14 @@ waiting(MasterNode, Nodes) ->
     io:format("waiting with Master Node ~w~n", [MasterNode]),
     timer:sleep(200),
     receive
+        %Node is server string only (NO {pid, node()})
         {nodedown, Node} -> 
             io:format("Received nodedown with Node: ~w~n", [Node]),
             handlingNodeDown(Node, MasterNode, Nodes);
         {apostar, Cliente, Apuesta} -> 
             io:format("Received apostar with Cliente: ~w , Apuesta: ~w ~n", [Cliente, Apuesta]),
-            MasterNode ! {Cliente, Apuesta}
+            MasterNode ! {apostar, Cliente, Apuesta},
+            waiting(MasterNode, Nodes)
     end.
 
 handlingNodeDown(NodeDown, MasterNode, Nodes) ->

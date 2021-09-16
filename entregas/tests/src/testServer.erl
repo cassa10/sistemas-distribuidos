@@ -40,27 +40,40 @@ slaveMode(Peers, EstadoMaster, DataMaster) ->
     end.
 
 startMaster(Peers) ->
-    io:format("from master mode"),
+    io:format("from master mode~n"),
     esperarApuestas(Peers, []).
 
 esperarApuestas(Peers, Apuestas) ->
+    io:format("esperando apuestas - Apuestas: ~w~n",[Apuestas]),
     receive
-        {apuesta, Apuesta} -> 
-            ApuestasUpdated = [Apuesta | Apuestas],
+        {apostar, Cliente, Apuesta} -> 
+            io:format("Apuesta de $~w con cliente ~w ~n",[Apuesta, Cliente]),
+            ApuestasUpdated = [{Cliente, Apuesta} | Apuestas],
             backup(Peers, ApuestasUpdated),
             esperarApuestas(Peers, ApuestasUpdated)
-    end,
-    imprimirApuestas(Peers, Apuestas).
+        %1min
+        after 60000 -> 
+            io:format("Procesar apuestas"),
+            imprimirApuestas(Peers, Apuestas)
+    end.
 
 imprimirApuestas(Peers, Apuestas) ->
+    io:format("from imprimirApuestas con Apuestas: ~w~n",[Apuestas]),
     cambioEstado(Peers, imprimirApuestas),
-    ApuestasPrinted = Apuestas,
+    %Test when crash during this process (20sec)
+    %timer:sleep(20000),
     lists:foreach(
-        fun (Apuesta) -> 
-            io:format("Apuesta: "+Apuesta+"\n"),
-            ApuestasPrinted = lists:delete(Apuesta, ApuestasPrinted),
-            backup(Peers, ApuestasPrinted)
-        end, Apuestas).
+        fun (Apuesta) ->
+            {Cliente, ApuestaValue} = Apuesta,
+            ApuestasPrinted = lists:delete(Apuesta, Apuestas),
+            io:format("Apuesta $~w de cliente ~w~n",[ApuestaValue, Cliente]),
+            backup(Peers, ApuestasPrinted),
+            %10sec
+            timer:sleep(10000)
+        end, Apuestas),
+    io:format("Apuestas impresas~n"),
+    cambioEstado(Peers, esperarApuestas),
+    esperarApuestas(Peers, []).
 
 backup(Peers, Data) ->
     lists:foreach(fun (Peer) -> Peer ! {backup, Data} end, Peers).
