@@ -5,7 +5,7 @@
 %Load Balancer = {'Id del proceso', Node()}
 %Apuesta es un int
 apostar(LoadBalancer, Apuesta) ->
-    io:format("Cliente mandando apuesta "+ Apuesta +"\n"),
+    io:format("Cliente mandando apuesta ~w", Apuesta),
     LoadBalancer ! {apuesta, {self(), node()}, Apuesta},
     receive
         {Data} -> io:format("Data recieved: "+ Data +"\n")

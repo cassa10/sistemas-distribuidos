@@ -24,7 +24,18 @@ Paso para instanciar server:
     
 - ```rebar3 shell --sname serverN --setcookie secret```
 
-- ```testServer:start(N, [{X, 'serverX@my_computer'}, {Y, 'serverY@my_computer'}])```
+- ```testServer:start(serverN, [{X, 'serverX@my_computer'}, {Y, 'serverY@my_computer'}]).```
+
+Ejemplo:
+
+- ```rebar3 shell --sname server1 --setcookie secret```
+- ```testServer:start(server1, [{server2, 'server2@bolddell'}, {server3, 'server3@bolddell'}]).```
+
+- ```rebar3 shell --sname server2 --setcookie secret```
+- ```testServer:start(server2, [{server1, 'server1@bolddell'}, {server3, 'server3@bolddell'}]).```
+
+- ```rebar3 shell --sname server3 --setcookie secret```
+- ```testServer:start(server3, [{server1, 'server1@bolddell'}, {server2, 'server2@bolddell'}]).```
 
 Una vez creado los nodos con los server instanciados con sus respectivos "Id" de proceso, habria que instanciar el Load Balancer para que les de la orden a cada servidor si es `master` o `slave`, para empezar a brindar sus servicios.
 
@@ -35,11 +46,43 @@ Una vez creado los nodos con los server instanciados con sus respectivos "Id" de
 
 - ```testLoadBalancer:start(Id, [{N, 'serverN@my_computer'}, {X, 'serverX@my_computer'}, {Y, 'serverY@my_computer'}])```
 
+Ejemplo:
+
+- ```rebar3 shell --sname loadBalancer --setcookie secret```
+
+- ```testLoadBalancer:start(loadBalancer, [{server1, 'server1@bolddell'}, {server2, 'server2@bolddell'}, {server3, 'server3@bolddell'}]).```
+
+
 Una vez instanciado el load balancer, ahora uno de los servidores empezara a tomar el rol de master (en nuestro codigo seria el primer elemento de la lista de nodos) y los demas de slaves, los cuales replicaran al master en cada evento o accion que tome este primero.
 
 3) Instanciar los clientes necesarios para probar
 
-```rebar3 shell --sname client --setcookie secret```
+- ```rebar3 shell --sname client --setcookie secret```
 
-```testClient:apostar({Id, 'loadBalancer@my_computer'})```
+- ```testClient:apostar({Id, 'loadBalancer@my_computer'}).```
 
+Ejemplo:
+
+- ```rebar3 shell --sname client --setcookie secret```
+- ```testClient:apostar({loadBalancer, 'loadBalancer@bolddell'}).```
+
+
+
+Script:
+
+#Servers
+
+rebar3 shell --sname server1 --setcookie secret
+testServer:start(server1, [{server2, 'server2@bolddell'}, {server3, 'server3@bolddell'}]).
+
+rebar3 shell --sname server2 --setcookie secret
+testServer:start(server2, [{server1, 'server1@bolddell'}, {server3, 'server3@bolddell'}]).
+
+rebar3 shell --sname server3 --setcookie secret
+testServer:start(server3, [{server1, 'server1@bolddell'}, {server2, 'server2@bolddell'}]).
+
+#Load Balancer
+
+rebar3 shell --sname loadBalancer --setcookie secret
+
+testLoadBalancer:start(loadBalancer, [{server1, 'server1@bolddell'}, {server2, 'server2@bolddell'}, {server3, 'server3@bolddell'}]).

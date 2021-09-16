@@ -1,27 +1,38 @@
 -module(testServer).
 
--export([init/2, start/2, waitMaster/1, slaveMode/3, startMaster/1, esperarApuestas/2, imprimirApuestas/2, backup/2, cambioEstado/2]).
+-export([init/1, start/2, waitMaster/1, slaveMode/3, startMaster/1, esperarApuestas/2, imprimirApuestas/2, backup/2, cambioEstado/2]).
 
-
+% Id :: atom
 start(Id, Nodes) ->
-    register(Id, self()),
-    init(Id, Nodes).
+    Pid = self(),
+    io:format("Start server with ~w id and ~w as pid.~n", [Id, Pid]),
+    register(Id, Pid),
+    init(Nodes).
 
-init(Id, Nodes) ->
-    io:format("Start Server with id "+ Id +"\n"),
+init(Nodes) ->
     waitMaster(Nodes).
 
 waitMaster(Peers) ->
     receive
-        master -> startMaster(Peers);
-        slave  -> slaveMode(Peers, esperarApuestas, [])
+        master -> 
+            io:format("received master~n"),
+            startMaster(Peers);
+        slave  -> 
+            io:format("received slave~n"),
+            slaveMode(Peers, esperarApuestas, [])
     end.
 
 slaveMode(Peers, EstadoMaster, DataMaster) ->
+    io:format("from slave mode"),
     receive
-        {cambioEstado, NuevoEstado} -> slaveMode(Peers, NuevoEstado, DataMaster);
-        {backup, Data} -> slaveMode(Peers, EstadoMaster, Data);
-        masterDown -> 
+        {cambioEstado, NuevoEstado} -> 
+            io:format("from slave mode - recieved cambioEstado with NuevoEstado ~w~n", [NuevoEstado]),
+            slaveMode(Peers, NuevoEstado, DataMaster);
+        {backup, Data} -> 
+            io:format("from slave mode - recieved backup with Data: ~w~n",[Data]),
+            slaveMode(Peers, EstadoMaster, Data);
+        masterDown ->
+            io:format("from slave mode - masterDown with EstadoMaster=~w~n",[EstadoMaster]),
             case EstadoMaster of 
                 esperarApuestas -> esperarApuestas(Peers, DataMaster);
                 imprimirApuestas -> imprimirApuestas(Peers, DataMaster)
@@ -29,6 +40,7 @@ slaveMode(Peers, EstadoMaster, DataMaster) ->
     end.
 
 startMaster(Peers) ->
+    io:format("from master mode"),
     esperarApuestas(Peers, []).
 
 esperarApuestas(Peers, Apuestas) ->
