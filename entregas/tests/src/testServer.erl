@@ -5,7 +5,7 @@
 % Id :: atom
 start(Id, Nodes) ->
     Pid = self(),
-    io:format("Start server with ~w id and ~w as pid.~n", [Id, Pid]),
+    logf("Start server with ~w id and ~w as pid.~n", [Id, Pid]),
     register(Id, Pid),
     init(Nodes).
 
@@ -15,24 +15,24 @@ init(Nodes) ->
 waitMaster(Peers) ->
     receive
         master -> 
-            io:format("received master~n"),
+            log("received master~n"),
             startMaster(Peers);
         slave  -> 
-            io:format("received slave~n"),
+            log("received slave~n"),
             slaveMode(Peers, esperarApuestas, [])
     end.
 
 slaveMode(Peers, EstadoMaster, DataMaster) ->
-    io:format("from slave mode"),
+    log("from slave mode"),
     receive
         {cambioEstado, NuevoEstado} -> 
-            io:format("from slave mode - recieved cambioEstado with NuevoEstado ~w~n", [NuevoEstado]),
+            logf("from slave mode - recieved cambioEstado with NuevoEstado ~w~n", [NuevoEstado]),
             slaveMode(Peers, NuevoEstado, DataMaster);
         {backup, Data} -> 
-            io:format("from slave mode - recieved backup with Data: ~w~n",[Data]),
+            logf("from slave mode - recieved backup with Data: ~w~n",[Data]),
             slaveMode(Peers, EstadoMaster, Data);
         masterDown ->
-            io:format("from slave mode - masterDown with EstadoMaster=~w~n",[EstadoMaster]),
+            logf("from slave mode - masterDown with EstadoMaster=~w~n",[EstadoMaster]),
             case EstadoMaster of 
                 esperarApuestas -> esperarApuestas(Peers, DataMaster);
                 imprimirApuestas -> imprimirApuestas(Peers, DataMaster)
@@ -40,25 +40,25 @@ slaveMode(Peers, EstadoMaster, DataMaster) ->
     end.
 
 startMaster(Peers) ->
-    io:format("from master mode~n"),
+    log("from master mode~n"),
     esperarApuestas(Peers, []).
 
 esperarApuestas(Peers, Apuestas) ->
-    io:format("esperando apuestas - Apuestas: ~w~n",[Apuestas]),
+    logf("esperando apuestas - Apuestas: ~w~n",[Apuestas]),
     receive
         {apostar, Cliente, Apuesta} -> 
-            io:format("Apuesta de $~w con cliente ~w ~n",[Apuesta, Cliente]),
+            logf("Apuesta de $~w con cliente ~w ~n",[Apuesta, Cliente]),
             ApuestasUpdated = [{Cliente, Apuesta} | Apuestas],
             backup(Peers, ApuestasUpdated),
             esperarApuestas(Peers, ApuestasUpdated)
         %1min
-        after 60000 -> 
-            io:format("Procesar apuestas"),
+        after 30000 -> 
+            log("Procesar apuestas"),
             imprimirApuestas(Peers, Apuestas)
     end.
 
 imprimirApuestas(Peers, Apuestas) ->
-    io:format("from imprimirApuestas con Apuestas: ~w~n",[Apuestas]),
+    logf("from imprimirApuestas con Apuestas: ~w~n",[Apuestas]),
     cambioEstado(Peers, imprimirApuestas),
     %Test when crash during this process (20sec)
     %timer:sleep(20000),
@@ -66,12 +66,13 @@ imprimirApuestas(Peers, Apuestas) ->
         fun (Apuesta) ->
             {Cliente, ApuestaValue} = Apuesta,
             ApuestasPrinted = lists:delete(Apuesta, Apuestas),
-            io:format("Apuesta $~w de cliente ~w~n",[ApuestaValue, Cliente]),
+            sendClient(Cliente, ApuestaValue, reward),
+            logf("Apuesta $~w de cliente ~w~n",[ApuestaValue, Cliente]),
             backup(Peers, ApuestasPrinted),
             %10sec
             timer:sleep(10000)
         end, Apuestas),
-    io:format("Apuestas impresas~n"),
+    log("Apuestas impresas~n"),
     cambioEstado(Peers, esperarApuestas),
     esperarApuestas(Peers, []).
 
@@ -80,3 +81,15 @@ backup(Peers, Data) ->
 
 cambioEstado(Peers, Estado) ->
     lists:foreach(fun (Peer) -> Peer ! {cambioEstado, Estado} end, Peers).
+
+sendClient(Cliente, ApuestaValue, IsReward) ->
+    Reward = ApuestaValue * 2,
+    logf("Cliente: ~w, Reward: ~w, IsReward:~w ~n",[Cliente, Reward, IsReward]),
+    Cliente ! {data, Reward},
+    ok.
+
+log(Message) -> 
+    io:format(Message).
+
+logf(Message, Params) -> 
+    io:format(Message, Params).

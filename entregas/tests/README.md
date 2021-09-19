@@ -59,12 +59,12 @@ Una vez instanciado el load balancer, ahora uno de los servidores empezara a tom
 
 - ```rebar3 shell --sname client --setcookie secret```
 
-- ```testClient:apostar({Id, 'loadBalancer@my_computer'}, N).```
+- ```testClient:apostar(id, {Id, 'loadBalancer@my_computer'}, N).```
 
 Ejemplo:
 
 - ```rebar3 shell --sname client --setcookie secret```
-- ```testClient:apostar({loadBalancer, 'loadBalancer@bolddell'}, 110).```
+- ```testClient:apostar(client, {loadBalancer, 'loadBalancer@bolddell'}, 110).```
 
 
 
@@ -90,4 +90,10 @@ testLoadBalancer:start(loadBalancer, [{server1, 'server1@bolddell'}, {server2, '
 #Client
 
 rebar3 shell --sname clientA --setcookie secret
-testClient:apostar({loadBalancer, 'loadBalancer@bolddell'},110).
+testClient:apostar(clientA,{loadBalancer, 'loadBalancer@bolddell'},110).
+
+rebar3 shell --sname clientB --setcookie secret
+testClient:apostar(clientB,{loadBalancer, 'loadBalancer@bolddell'},500).
+
+rebar3 shell --sname clientC --setcookie secret
+testClient:apostar(clientC,{loadBalancer, 'loadBalancer@bolddell'},3000).
