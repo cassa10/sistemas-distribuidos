@@ -1,63 +1,78 @@
 -module(ruleta).
 
--export([init/2, numberCategoryMap/1, esperarApuestas/4,
-    empezarRonda/3, cobrarOPagarApuestas/2, informarPerdida/2,
+-export([start/2, init/1, numberCategoryMap/1, esperarApuestas/3,
+    empezarRonda/2, procesarApuestas/3, informarPerdida/2,
     esGanador/2, pagarApuesta/3, pagarNumero/1, pagarCategoria/2, girarRuleta/0]).
 
-slaveMode(Peers) ->
-    % receive
-    %     %{cambioEstado, estado} -> 
-    %     %{backup, ...data} ->  ..., slaveMode(Peers);
-    %     %{masterDown} -> ..., esperarApuestas(....);
-    %     %...
-    % end.
-    not_implemented.
+start(Id, Nodes) ->
+    Pid = self(),
+    logger:logf("Start server with ~w id and ~w as pid.~n", [Id, Pid]),
+    register(Id, Pid),
+    init(Nodes).
 
-init(IsMaster, Peers) ->
-    %Ver como hacer cuando hay slaves y que vayan guardando todos los datos a partir del envio de mensajes.
-    case IsMaster of
-        true -> esperarApuestas(Peers, [], [], 30000);
-        false -> slaveMode(Peers)
+init(Nodes) ->
+    waitLoadBalancer(Nodes).
+
+waitLoadBalancer(Peers) ->
+    logger:log("waiting load balancer...~n"),
+    receive
+        master -> 
+            logger:log("received master~n"),
+            masterMode(Peers);
+        slave  -> 
+            logger:log("received slave~n"),
+            slaveMode(Peers, esperarApuestas, [], -1)
     end.
 
-esperarApuestas(Peers, UsuariosConectados, ApuestasDeUsuarios, TiempoRestante) ->
-
-    % La ruleta tiene una lista de usuarios conectados (limitados a X usuarios) y una lista de apuestas.
-    % En cada tirada se espera 2 minutos:
-    %   1) Si no hay nadie, vuelve a esperar;
-    %   2) Si hay minimo un usuario conectado, empieza a ruletear.
-    % Apuesta = { nombre_usuario, PID_usuario, Apuesta_usuario, Category || Numero }
-    Start = erlang:system_time(seconds),
-
-    %Chequear si algun usuario conectado esta muerto?
-
-    %Hacer if si TiempoRestante es 0 o menor, saltear esto y ir directo al case ApuestasDeUsuarios...
+slaveMode(Peers, EstadoMaster, Apuestas, NumeroGanador) ->
+    logger:log("En slave mode~n"),
     receive
-        {conectar, NodoUsuario} ->
-            UsuariosConectadosUpdated = [NodoUsuario | UsuariosConectados],
-            TiempoTranscurrido = erlang:system_time(seconds) - Start,
-            %Backup_slaves
-            esperarApuestas(Peers, UsuariosConectadosUpdated, ApuestasDeUsuarios, TiempoRestante - TiempoTranscurrido);
+        {cambioEstado, NuevoEstado} -> 
+            logger:logf("slave mode - se recibio cambioEstado con NuevoEstado ~w~n",[NuevoEstado]),
+            slaveMode(Peers, NuevoEstado, Apuestas, NumeroGanador);
+        {replicarApuestas, ApuestasNuevas} ->
+            logger:logf("slave mode - se recibio replicate apuestas con apuestas: ~w~n",[ApuestasNuevas]),
+            slaveMode(Peers, EstadoMaster, ApuestasNuevas, NumeroGanador);
+        {replicarNumeroGanador, ActualNumeroGanador} ->
+            logger:logf("slave mode - se recibio replicate numero ganador con numero ganador: ~w~n",[ActualNumeroGanador]),
+            slaveMode(Peers, EstadoMaster, Apuestas, ActualNumeroGanador);
+        masterDown ->
+            logger:logf("slave mode - se recibio masterDown con EstadoMaster: ~w , NumeroGanador: ~w ~n", [EstadoMaster, Apuestas, NumeroGanador]),
+            case EstadoMaster of
+                esperarApuestas -> esperarApuestas(Peers, Apuestas, 30000);
+                empezarRonda -> empezarRonda(Peers, Apuestas);
+                procesarApuestas -> procesarApuestas(Peers, NumeroGanador, Apuestas)
+            end
+    end.
+
+masterMode(Peers) ->
+    esperarApuestas(Peers, [], 30000).
+
+esperarApuestas(Peers, ApuestasDeUsuarios, TiempoRestante) ->
+    replicarNumeroGanador(Peers, -1),
+    replicarCambioDeEstado(Peers, esperarApuestas),
+    % Apuesta = { nombre_usuario, PID_usuario, Apuesta_usuario, Category || Numero }
+    Start = erlang:system_time(millisecond),
+    receive
         {apostar, Apuesta} ->
-            %evaluar si el usuarios pertenece a los que estan conectados...
             ApuestasDeUsuariosUpdated = [Apuesta | ApuestasDeUsuarios],
-            TiempoTranscurrido = erlang:system_time(seconds) - Start,
+            TiempoTranscurrido = minusTimeAbs(erlang:system_time(millisecond), Start),
             %Backup_slaves
-            esperarApuestas(Peers, UsuariosConectados, ApuestasDeUsuariosUpdated, TiempoRestante - TiempoTranscurrido)
+            replicarApuestas(Peers, ApuestasDeUsuariosUpdated),
+            esperarApuestas(Peers, ApuestasDeUsuariosUpdated, minusTimeAbs(TiempoRestante, TiempoTranscurrido))
         after TiempoRestante ->
             fin_espera
-            %Backup_slaves?
     end,
     case ApuestasDeUsuarios of
-        [] -> esperarApuestas(Peers, UsuariosConectados, ApuestasDeUsuarios, 120);
-        _  -> empezarRonda(Peers, UsuariosConectados, ApuestasDeUsuarios)
+        [] -> esperarApuestas(Peers, ApuestasDeUsuarios, 30000);
+        _  -> empezarRonda(Peers, ApuestasDeUsuarios)
     end.
 
-empezarRonda(Peers, UsuariosConectados, ApuestasDeUsuarios) ->
+empezarRonda(Peers, ApuestasDeUsuarios) ->
+    replicarCambioDeEstado(Peers, empezarRonda),
     NumeroGanador = girarRuleta(),
-    %Ver de hacer un backup en los slaves, por cada apuesta pagada y luego filtrarlos.
-    cobrarOPagarApuestas(NumeroGanador, ApuestasDeUsuarios),
-    esperarApuestas(Peers, UsuariosConectados, [], 120).
+    replicarNumeroGanador(Peers, NumeroGanador),
+    procesarApuestas(Peers, NumeroGanador, ApuestasDeUsuarios).
 
 numberCategoryMap(N) ->
     case N of
@@ -100,20 +115,21 @@ numberCategoryMap(N) ->
         36 -> [rojo, par, tercera_docena, tercera_columna, segunda_mitad]
     end.
 
-% Apuesta = { nombre_usuario, PID_usuario, Apuesta_usuario, Category || {numero, Numero} }
-cobrarOPagarApuestas(NumeroGanador, Apuestas) ->
+% Apuesta = { nombre_usuario, {PID_ID, UserNode}, Apuesta_usuario, Category || {numero, Numero} }
+procesarApuestas(Peers, NumeroGanador, Apuestas) ->
+    replicarCambioDeEstado(Peers, procesarApuestas),
     lists:foreach(
-        fun ({ _, NodoUsuario, DineroApostado, CategoriaONumero}) ->
+        fun (Apuesta) ->
+            {_, NodoUsuario, DineroApostado, CategoriaONumero} = Apuesta,
+            ApuestasUpdated = lists:delete(Apuesta, Apuestas),
             case esGanador(NumeroGanador, CategoriaONumero) of
                 true -> pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero);
                 false -> informarPerdida(NodoUsuario, DineroApostado)
-            end
-            %BACKUP, no volver a pagar las apuestas pagas, cuando levante el otro nodo si este se cae.
-        end
-    ).
-
-informarPerdida(NodoUsuario, DineroApostado) ->
-    NodoUsuario ! {perdida, DineroApostado}.
+            end,
+            %Replicar que la apuesta fue cobrada/pagada
+            replicarApuestas(Peers, ApuestasUpdated)
+        end, Apuestas),
+    esperarApuestas(Peers, [], 30000).
 
 esGanador(NumeroGanador, CategoriaONumeroApostado) ->
     case CategoriaONumeroApostado of
@@ -124,11 +140,13 @@ esGanador(NumeroGanador, CategoriaONumeroApostado) ->
 pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero) ->
     case CategoriaONumero of
         {numero, _} ->
-            Recompenza = pagarNumero(DineroApostado);
+            NodoUsuario ! {ganancia, pagarNumero(DineroApostado)};
         _ ->
-            Recompenza = pagarCategoria(DineroApostado, CategoriaONumero)
-    end,
-    NodoUsuario ! {ganancia, Recompenza}.
+            NodoUsuario ! {ganancia, pagarCategoria(DineroApostado, CategoriaONumero)}
+    end.
+
+informarPerdida(NodoUsuario, DineroApostado) ->
+    NodoUsuario ! {perdida, DineroApostado}.
 
 pagarNumero(Apuesta) ->
     Apuesta * 36.
@@ -142,3 +160,22 @@ pagarCategoria(Apuesta, Categoria) ->
 
 girarRuleta() ->
     rand:uniform(37) - 1.
+
+minusTimeAbs(Time1,Time2) ->
+    DifTime = Time1 - Time2,
+    if 
+        DifTime >= 0 -> DifTime;
+        true -> 0
+    end.
+
+replicarApuestas(Peers, Apuestas) ->
+    sendPeers(Peers, {replicarApuestas, Apuestas}).
+
+replicarNumeroGanador(Peers, NumeroGanador) ->
+    sendPeers(Peers, {replicarNumeroGanador, NumeroGanador}).
+
+replicarCambioDeEstado(Peers, Estado) ->
+    sendPeers(Peers, {cambioEstado, Estado}).
+
+sendPeers(Peers, Message) ->
+    lists:foreach(fun (Peer) -> Peer ! Message end, Peers).
