@@ -3,7 +3,7 @@
 -export([formatApuestas/1, mensajePrincipal/2, mensajeApuesta/0, mensajeSeleccionarCategoria/0,
     mensajeDarValorApuesta/0, mensajeDarValorPleno/0, mensajeGanancia/1, mensajeCargando/0, mensajeConfirmacion/0,
     errorValorApuesta/0, errorValorPleno/0, errorOpcionInvalida/0, errorOpcionInvalidaHome/0,
-    mensajeGananciaTotal/1, mensajePerdida/1, mensajeIngresarUsuario/0, usuarioInvalido/0]).
+    mensajeGananciaTotal/1, mensajePerdida/1, mensajeIngresarUsuario/0, usuarioInvalido/0, errorSinApuestas/0]).
 
 formatApuestas(Apuestas) ->
     integer_to_list(lists:foldl(fun(_, X) -> X + 1 end, 0, Apuestas)).
@@ -15,8 +15,10 @@ usuarioInvalido() ->
     "Usuario invalido!".
 
 mensajePrincipal(NombreUsuario, Apuestas) ->
-    "\nUsuario: " ++ NombreUsuario ++ "\n" ++
-    "#Nro Apuestas actuales: " ++ formatApuestas(Apuestas) ++ "\n\n" ++
+    "\n# Usuario: " ++ NombreUsuario ++ "\n" ++
+    "# Apuesta = {categoria/pleno, dinero apostado}\n" ++
+    "# Nro Apuestas: " ++ formatApuestas(Apuestas) ++ "\n" ++
+    io_lib:format("# Apuestas: ~w ~n~n",[Apuestas]) ++
     "Ingrese\n" ++
 		"1. Apostar\n" ++
 		"2. Deshacer apuestas\n" ++
@@ -84,3 +86,6 @@ errorOpcionInvalida() ->
 errorOpcionInvalidaHome() ->
     "Input invalido! Por favor, ingresa un valor entre 0 al 3" ++
     "\nOpcion ingresada: ".
+
+errorSinApuestas() ->
+    "No posee ninguna apuesta. Por favor, agregue al menos una apuesta y vuelva a intentarlo!\n".

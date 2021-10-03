@@ -1,9 +1,9 @@
 -module(usuario).
 
--export([init/2, salir/0, manejarInputUsuario/5, elegirApuesta/4, obtenerValorApuesta/1,
+-export([start/2, salir/0, manejarInputUsuario/5, elegirApuesta/4, obtenerValorApuesta/1,
     obtenerApuestaPorCategoria/4, mandarApuestas/4, esperarFinRonda/5]).
 
-init(Id, Server) ->
+start(Id, Server) ->
     register(Id, self()),
     initUsername(Id, Server, ioMessages:mensajeIngresarUsuario()).
 
@@ -33,7 +33,10 @@ manejarInputUsuario(Server, Id, NombreUsuario, Apuestas, ReadMessage) ->
             borrarApuestas(Server, Id, NombreUsuario, Apuestas);
         % 3. Mandar Apuestas
         {ok, 3} ->
-            mandarApuestas(Server, Id, NombreUsuario, Apuestas);
+            case Apuestas of
+                [] -> manejarInputUsuario(Server, Id, NombreUsuario, Apuestas, ioMessages:errorSinApuestas());
+                _  -> mandarApuestas(Server, Id, NombreUsuario, Apuestas)
+            end;
         % 0. Salir
         {ok, 0} -> salir();
         _       ->

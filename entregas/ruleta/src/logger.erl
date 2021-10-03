@@ -3,15 +3,15 @@
 -export([log/1, logf/2]).
 
 log(Message) -> 
-    io:format("[~s] | ", [nowf()]),
+    io:format("[~s] | ", [timeNowf()]),
     io:format(Message).
 
 logf(Message, Params) -> 
-    io:format("[~s] | ", [nowf()]),
+    io:format("[~s] | ", [timeNowf()]),
     io:format(Message, Params).
 
 %Return time now like "yyyy-mm-ddThh:mm:ss.zZ"
-nowf() -> 
+timeNowf() -> 
     Now = erlang:timestamp(),
     {_, _, MicroSecs} = Now,
     Ms = round(MicroSecs / 1000),
