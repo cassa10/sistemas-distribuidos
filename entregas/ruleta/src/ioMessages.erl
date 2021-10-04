@@ -57,13 +57,13 @@ mensajeDarValorApuesta() ->
     "\nIngrese su apuesta: ".
 
 mensajeGanancia(Valor) ->
-    "\nGanancia: $" ++ Valor ++ "\n".
+    io_lib:format("~nGanancia: +$~w~n",[Valor]).
 
 mensajeGananciaTotal(Valor) ->
-    "\nGanancia Total: $" ++ Valor ++ "\n".
+    io_lib:format("~nGanancia Total: +$~w~n",[Valor]).
 
-mensajePerdida(Apuesta) ->
-    "\nPerdiste: $" ++ Apuesta ++ "\n".
+mensajePerdida(Valor) ->
+    io_lib:format("~nPerdiste: -$~w~n",[Valor]).
 
 mensajeCargando() ->
     "Por favor, no se vaya y espere...\n".

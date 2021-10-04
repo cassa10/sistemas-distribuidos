@@ -6,7 +6,7 @@
 
 start(Id, Nodes) ->
     Pid = self(),
-    logger:logf("Start server with id: ~w, pid: ~w ~n", [Id, Pid]),
+    logger:logf("Start server with id: ~w, pid: ~w", [Id, Pid]),
     register(Id, Pid),
     init(Nodes).
 
@@ -14,30 +14,30 @@ init(Nodes) ->
     waitLoadBalancer(Nodes).
 
 waitLoadBalancer(Peers) ->
-    logger:log("waiting load balancer...~n"),
+    logger:log("waiting load balancer..."),
     receive
         master -> 
-            logger:log("received master~n"),
+            logger:log("received master"),
             masterMode(Peers);
         slave  -> 
-            logger:log("received slave~n"),
+            logger:log("received slave"),
             slaveMode(Peers, esperarApuestas, [], -1)
     end.
 
 slaveMode(Peers, EstadoMaster, Apuestas, NumeroGanador) ->
-    logger:log("En slave mode~n"),
+    logger:log("En slave mode"),
     receive
         {cambioEstado, NuevoEstado} -> 
-            logger:logf("slave mode - se recibio cambioEstado con NuevoEstado ~w~n",[NuevoEstado]),
+            logger:logf("slave mode - se recibio cambioEstado con NuevoEstado ~w",[NuevoEstado]),
             slaveMode(Peers, NuevoEstado, Apuestas, NumeroGanador);
         {replicarApuestas, ApuestasNuevas} ->
-            logger:logf("slave mode - se recibio replicate apuestas con apuestas: ~w~n",[ApuestasNuevas]),
+            logger:logf("slave mode - se recibio replicate apuestas con apuestas: ~w",[ApuestasNuevas]),
             slaveMode(Peers, EstadoMaster, ApuestasNuevas, NumeroGanador);
         {replicarNumeroGanador, ActualNumeroGanador} ->
-            logger:logf("slave mode - se recibio replicate numero ganador con numero ganador: ~w~n",[ActualNumeroGanador]),
+            logger:logf("slave mode - se recibio replicate numero ganador con numero ganador: ~w",[ActualNumeroGanador]),
             slaveMode(Peers, EstadoMaster, Apuestas, ActualNumeroGanador);
         masterDown ->
-            logger:logf("slave mode - se recibio masterDown con EstadoMaster: ~w , Apuestas ~w, NumeroGanador: ~w ~n", [EstadoMaster, Apuestas, NumeroGanador]),
+            logger:logf("slave mode - se recibio masterDown con EstadoMaster: ~w , Apuestas ~w, NumeroGanador: ~w", [EstadoMaster, Apuestas, NumeroGanador]),
             case EstadoMaster of
                 esperarApuestas -> esperarApuestas(Peers, Apuestas, 30000);
                 empezarRonda -> empezarRonda(Peers, Apuestas);
@@ -51,7 +51,7 @@ masterMode(Peers) ->
 esperarApuestas(Peers, ApuestasDeUsuarios, TiempoRestante) ->
     replicarNumeroGanador(Peers, -1),
     replicarCambioDeEstado(Peers, esperarApuestas),
-    logger:logf("Esperando apuestas con Apuestas de usuarios: ~w , Tiempo restante: ~w~n",[ApuestasDeUsuarios, TiempoRestante]),
+    logger:logf("Esperando apuestas con Apuestas de usuarios: ~w , Tiempo restante: ~w",[ApuestasDeUsuarios, TiempoRestante]),
     % Apuesta = { nombre_usuario, PID_usuario, Apuesta_usuario, Category || Numero }
     Start = erlang:system_time(millisecond),
     receive
@@ -119,7 +119,7 @@ numberCategoryMap(N) ->
 % Apuesta = { nombre_usuario, {PID_ID, UserNode}, Apuesta_usuario, Category || {numero, Numero} }
 procesarApuestas(Peers, NumeroGanador, Apuestas) ->
     replicarCambioDeEstado(Peers, procesarApuestas),
-    logger:logf("Procesando apuestas: ~w con numero ganador: ~w~n",[Apuestas, NumeroGanador]),
+    logger:logf("Procesando apuestas: ~w con numero ganador: ~w",[Apuestas, NumeroGanador]),
     lists:foreach(
         fun (Apuesta) ->
             {_, NodoUsuario, {DineroApostado, CategoriaONumero}} = Apuesta,
@@ -172,15 +172,15 @@ minusTimeAbs(Time1,Time2) ->
     end.
 
 replicarApuestas(Peers, Apuestas) ->
-    logger:logf("Replicando apuestas~w~n", [Apuestas]),
+    logger:logf("Replicando apuestas~w", [Apuestas]),
     sendPeers(Peers, {replicarApuestas, Apuestas}).
 
 replicarNumeroGanador(Peers, NumeroGanador) ->
-    logger:logf("Replicando numero ganador ~w~n", [NumeroGanador]),
+    logger:logf("Replicando numero ganador ~w", [NumeroGanador]),
     sendPeers(Peers, {replicarNumeroGanador, NumeroGanador}).
 
 replicarCambioDeEstado(Peers, Estado) ->
-    logger:logf("Replicando cambio de estado a ~w~n", [Estado]),
+    logger:logf("Replicando cambio de estado a ~w", [Estado]),
     sendPeers(Peers, {cambioEstado, Estado}).
 
 sendPeers(Peers, Message) ->
