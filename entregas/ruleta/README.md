@@ -33,3 +33,6 @@ loadBalancer:start(loadBalancer, [{server1, 'server1@bolddell'}, {server2, 'serv
 
 rebar3 shell --sname clientA --setcookie secret
 usuario:start(clientA, {loadBalancer, 'loadBalancer@bolddell'}).
+
+rebar3 shell --sname clientB --setcookie secret
+usuario:start(clientB, {loadBalancer, 'loadBalancer@bolddell'}).

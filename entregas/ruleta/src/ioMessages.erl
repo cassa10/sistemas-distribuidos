@@ -1,9 +1,9 @@
 -module(ioMessages).
 
 -export([formatApuestas/1, mensajePrincipal/2, mensajeApuesta/0, mensajeSeleccionarCategoria/0,
-    mensajeDarValorApuesta/0, mensajeDarValorPleno/0, mensajeGanancia/1, mensajeCargando/0, mensajeConfirmacion/0,
-    errorValorApuesta/0, errorValorPleno/0, errorOpcionInvalida/0, errorOpcionInvalidaHome/0,
-    mensajeGananciaTotal/1, mensajePerdida/1, mensajeIngresarUsuario/0, usuarioInvalido/0, errorSinApuestas/0]).
+    mensajeDarValorApuesta/0, mensajeDarValorPleno/0, mensajeGanancia/2, mensajeCargando/0, mensajeConfirmacion/0,
+    errorValorApuesta/0, errorValorPleno/0, errorOpcionInvalida/0, errorOpcionInvalidaHome/0, mensajeFinDeRonda/0,
+    mensajeGananciaTotal/1, mensajePerdida/2, mensajeIngresarUsuario/0, usuarioInvalido/0, errorSinApuestas/0]).
 
 formatApuestas(Apuestas) ->
     integer_to_list(lists:foldl(fun(_, X) -> X + 1 end, 0, Apuestas)).
@@ -56,14 +56,14 @@ mensajeDarValorPleno() ->
 mensajeDarValorApuesta() ->
     "\nIngrese su apuesta: ".
 
-mensajeGanancia(Valor) ->
-    io_lib:format("~nGanancia: +$~w~n",[Valor]).
+mensajeGanancia(CategoriaONumero, Valor) ->
+    io_lib:format("~nApuesta a \"~w\" con ganancia de +$~w~n",[CategoriaONumero, Valor]).
 
 mensajeGananciaTotal(Valor) ->
     io_lib:format("~nGanancia Total: +$~w~n",[Valor]).
 
-mensajePerdida(Valor) ->
-    io_lib:format("~nPerdiste: -$~w~n",[Valor]).
+mensajePerdida(CategoriaONumero, Valor) ->
+    io_lib:format("~nApuesta a \"~w\" con perdida de -$~w~n",[CategoriaONumero, Valor]).
 
 mensajeCargando() ->
     "Por favor, no se vaya y espere...\n".
@@ -88,4 +88,10 @@ errorOpcionInvalidaHome() ->
     "\nOpcion ingresada: ".
 
 errorSinApuestas() ->
-    "No posee ninguna apuesta. Por favor, agregue al menos una apuesta y vuelva a intentarlo!\n".
+    "No posee ninguna apuesta. Por favor, agregue al menos una apuesta y vuelva a intentarlo!"++
+    "\nOpcion ingresada: ".
+
+mensajeFinDeRonda() ->
+    "|----------------------------------------------------------|\n" ++
+    "|                     Fin de Ronda                         |\n" ++
+    "|----------------------------------------------------------|\n".

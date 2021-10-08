@@ -12,7 +12,6 @@ salir() ->
 
 initUsername(Id, Server, InsertUsernameMessage) ->
     NombreUsuario = io:get_line(InsertUsernameMessage),
-    io:format("~w~n",[NombreUsuario]),
     case NombreUsuario of
         "" ->
             io:format(ioMessages:usuarioInvalido()),
@@ -112,13 +111,12 @@ mandarApuestas(Server, Id, NombreUsuario, Apuestas) ->
 esperarFinRonda(Server, Id, NombreUsuario, ApuestaSize, GananciaTotal) ->
     io:format(ioMessages:mensajeCargando()),
     receive
-        {ganancia, N} ->
-            io:format(ioMessages:mensajeGanancia(N)),
-            GananciaTotalActualizado = GananciaTotal + N,
+        {ganancia, CategoriaONumero, Ganancia} ->
+            io:format(ioMessages:mensajeGanancia(CategoriaONumero, Ganancia)),
+            GananciaTotalActualizado = GananciaTotal + Ganancia,
             esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestaSize - 1, GananciaTotalActualizado);
-        {perdida, DineroApostado} ->
-            %TODO: Revisar si eliminar este mensaje.
-            io:format(ioMessages:mensajePerdida(DineroApostado)),
+        {perdida, CategoriaONumero, DineroApostado} ->
+            io:format(ioMessages:mensajePerdida(CategoriaONumero, DineroApostado)),
             esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestaSize - 1, GananciaTotal)
         after 10000 ->
             esperarFinRonda(Server, Id, NombreUsuario, ApuestaSize, GananciaTotal)
@@ -129,6 +127,7 @@ esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestasSize, GananciaTo
         ApuestasSize > 0 -> esperarFinRonda(Server, Id, NombreUsuario, ApuestasSize, GananciaTotal);
         true -> 
             io:format(ioMessages:mensajeGananciaTotal(GananciaTotal)),
+            io:format(ioMessages:mensajeFinDeRonda()),
             manejarInputUsuario(Server, Id, NombreUsuario, [], ioMessages:mensajePrincipal(NombreUsuario, []))
     end.
 

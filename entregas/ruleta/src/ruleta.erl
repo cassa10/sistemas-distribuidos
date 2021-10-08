@@ -1,8 +1,7 @@
 -module(ruleta).
 
 -export([start/2, init/1, numberCategoryMap/1, esperarApuestas/3,
-    empezarRonda/2, procesarApuestas/3, informarPerdida/2,
-    esGanador/2, pagarApuesta/3, pagarNumero/1, pagarCategoria/2, girarRuleta/0]).
+    empezarRonda/2, procesarApuestas/3, esGanador/2, pagarApuesta/3, pagarNumero/1, pagarCategoria/2, girarRuleta/0]).
 
 start(Id, Nodes) ->
     Pid = self(),
@@ -27,6 +26,9 @@ waitLoadBalancer(Peers) ->
 slaveMode(Peers, EstadoMaster, Apuestas, NumeroGanador) ->
     logger:log("En slave mode"),
     receive
+        terminoProcesarApuestas ->
+            logger:log("slave mode - se recibio terminoProcesarApuestas"),
+            slaveMode(Peers, esperarApuestas, [], -1);
         {cambioEstado, NuevoEstado} -> 
             logger:logf("slave mode - se recibio cambioEstado con NuevoEstado ~w",[NuevoEstado]),
             slaveMode(Peers, NuevoEstado, Apuestas, NumeroGanador);
@@ -36,6 +38,11 @@ slaveMode(Peers, EstadoMaster, Apuestas, NumeroGanador) ->
         {replicarNumeroGanador, ActualNumeroGanador} ->
             logger:logf("slave mode - se recibio replicate numero ganador con numero ganador: ~w",[ActualNumeroGanador]),
             slaveMode(Peers, EstadoMaster, Apuestas, ActualNumeroGanador);
+        {apuestaProcesada, Apuesta} ->
+            logger:logf("slave mode - se recibio replicate apuesta procesada con apuesta: ~w",[Apuesta]),
+            ApuestasUpdated = lists:delete(Apuesta, Apuestas),
+            logger:logf("slave mode - actualizando apuestas replicadas: ~w",[ApuestasUpdated]),
+            slaveMode(Peers, EstadoMaster, ApuestasUpdated, NumeroGanador);
         masterDown ->
             logger:logf("slave mode - se recibio masterDown con EstadoMaster: ~w , Apuestas ~w, NumeroGanador: ~w", [EstadoMaster, Apuestas, NumeroGanador]),
             case EstadoMaster of
@@ -49,10 +56,8 @@ masterMode(Peers) ->
     esperarApuestas(Peers, [], 30000).
 
 esperarApuestas(Peers, ApuestasDeUsuarios, TiempoRestante) ->
-    replicarNumeroGanador(Peers, -1),
-    replicarCambioDeEstado(Peers, esperarApuestas),
     logger:logf("Esperando apuestas con Apuestas de usuarios: ~w , Tiempo restante: ~w",[ApuestasDeUsuarios, TiempoRestante]),
-    % Apuesta = { nombre_usuario, PID_usuario, Apuesta_usuario, Category || Numero }
+    % Apuesta = { nombre_usuario, {PID, Node_Usuario}, Apuesta_usuario, Category || Numero }
     Start = erlang:system_time(millisecond),
     receive
         {apostar, Apuesta} ->
@@ -116,40 +121,45 @@ numberCategoryMap(N) ->
         36 -> [rojo, par, tercera_docena, tercera_columna, segunda_mitad]
     end.
 
-% Apuesta = { nombre_usuario, {PID_ID, UserNode}, Apuesta_usuario, Category || {numero, Numero} }
+% Apuesta = { nombre_usuario, {PID_ID, UserNode}, {Categoria || Integer, DineroApostado}}
 procesarApuestas(Peers, NumeroGanador, Apuestas) ->
     replicarCambioDeEstado(Peers, procesarApuestas),
-    logger:logf("Procesando apuestas: ~w con numero ganador: ~w",[Apuestas, NumeroGanador]),
+    logger:logf("Procesando apuestas: ~w con numero ganador: ~w y categorias ganadoras: ~w",[Apuestas, NumeroGanador, numberCategoryMap(NumeroGanador)]),
     lists:foreach(
         fun (Apuesta) ->
-            {_, NodoUsuario, {DineroApostado, CategoriaONumero}} = Apuesta,
-            ApuestasUpdated = lists:delete(Apuesta, Apuestas),
-            logger:logf("ProcesandoApuestas - (deberia eliminar una a una) ApuestasUpdated: ~w", [ApuestasUpdated]),
+            {_, NodoUsuario, {CategoriaONumero, DineroApostado}} = Apuesta,
+            logger:logf("ProcesandoApuestas - apuesta: ~w", [Apuesta]),
+            %TODO: Sleep de prueba
+            timer:sleep(10000),
             case esGanador(NumeroGanador, CategoriaONumero) of
                 true -> pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero);
-                false -> informarPerdida(NodoUsuario, DineroApostado)
+                false -> informarPerdida(NodoUsuario, DineroApostado, CategoriaONumero)
             end,
             %Replicar que la apuesta fue cobrada/pagada
-            replicarApuestas(Peers, ApuestasUpdated)
+            replicarApuestasProcesada(Peers, Apuesta)
         end, Apuestas),
+    resetReplicaNumeroGanadorEIrAEsperarApuestas(Peers).
+
+resetReplicaNumeroGanadorEIrAEsperarApuestas(Peers) ->
+    replicarResetEsperarApuestas(Peers),
     esperarApuestas(Peers, [], 30000).
 
 esGanador(NumeroGanador, CategoriaONumeroApostado) ->
-    case CategoriaONumeroApostado of
-        {numero, N} -> NumeroGanador == N;
-        _ -> lists:member(CategoriaONumeroApostado, numberCategoryMap(NumeroGanador))
+    case is_integer(CategoriaONumeroApostado) of
+        true -> NumeroGanador == CategoriaONumeroApostado;
+        false -> lists:member(CategoriaONumeroApostado, numberCategoryMap(NumeroGanador))
     end.
 
 pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero) ->
     case CategoriaONumero of
         {numero, _} ->
-            NodoUsuario ! {ganancia, pagarNumero(DineroApostado)};
+            NodoUsuario ! {ganancia, CategoriaONumero, pagarNumero(DineroApostado)};
         _ ->
-            NodoUsuario ! {ganancia, pagarCategoria(DineroApostado, CategoriaONumero)}
+            NodoUsuario ! {ganancia, CategoriaONumero, pagarCategoria(DineroApostado, CategoriaONumero)}
     end.
 
-informarPerdida(NodoUsuario, DineroApostado) ->
-    NodoUsuario ! {perdida, DineroApostado}.
+informarPerdida(NodoUsuario, DineroApostado, CategoriaONumero) ->
+    NodoUsuario ! {perdida, CategoriaONumero, DineroApostado}.
 
 pagarNumero(Apuesta) ->
     Apuesta * 36.
@@ -182,6 +192,14 @@ replicarNumeroGanador(Peers, NumeroGanador) ->
 replicarCambioDeEstado(Peers, Estado) ->
     logger:logf("Replicando cambio de estado a ~w", [Estado]),
     sendPeers(Peers, {cambioEstado, Estado}).
+
+replicarResetEsperarApuestas(Peers) ->
+    logger:log("Replicando reset esperar apuestas"),
+    sendPeers(Peers, terminoProcesarApuestas).
+
+replicarApuestasProcesada(Peers, Apuesta) ->
+    logger:logf("Replicando eliminar apuesta procesada - apuesta: ~w",[Apuesta]),
+    sendPeers(Peers, {apuestaProcesada, Apuesta}).
 
 sendPeers(Peers, Message) ->
     lists:foreach(fun (Peer) -> Peer ! Message end, Peers).

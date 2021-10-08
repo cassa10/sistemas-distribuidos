@@ -1,6 +1,6 @@
 -module(tests).
 
--export([start/0, start1/0]).
+-export([start/0, start1/0, sarasa/1]).
 
 start() ->
     io:format("Hello, world!\n"),
