@@ -26,7 +26,7 @@ waiting(MasterNode, Nodes) ->
             handlingNodeDown(Node, MasterNode, Nodes);
         {apostar, Apuesta} -> 
             logger:logf("Se recibio apostar con Apuesta: ~w", [Apuesta]),
-            MasterNode ! {apostar, Apuesta},
+            sendApuestaToNodes(Nodes, Apuesta),
             waiting(MasterNode, Nodes)
     end.
 
@@ -70,3 +70,9 @@ deleteNodeDown(NodeDown, Nodes) ->
     NewList = lists:keydelete(NodeDown, 2, Nodes),
     logger:logf("Nodes new list: ~w", [NewList]),
     NewList.
+
+sendApuestaToNodes(Nodes, Apuesta) ->
+    lists:foreach(
+        fun(Node) -> 
+            Node ! {apostar, Apuesta} 
+        end, Nodes).
