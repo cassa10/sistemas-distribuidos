@@ -152,7 +152,20 @@ obtenerApuestaPorPleno() ->
     end.
 
 agregarApuestaEnMisApuestas(Apuestas, Apuesta) ->
-    [Apuesta | Apuestas].
+    { Categoria, Valor } = Apuesta,
+    NuevaLista = lists:map(
+	fun (ApuestaVieja) ->
+	    { Categoria_, Valor_ } = ApuestaVieja,
+	    case Categoria of
+	      Categoria_ -> { Categoria, Valor_ + Valor };
+	      _ -> ApuestaVieja
+	    end
+	end
+    , Apuestas),
+    case lists:keymember(Categoria, 1, NuevaLista) of
+	false -> [Apuesta | Apuestas];
+	true -> NuevaLista
+    end.
 
 sizeList([]) -> 0;
 sizeList([_|XS]) -> 1 + sizeList(XS).
