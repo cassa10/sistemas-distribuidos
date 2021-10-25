@@ -21,7 +21,7 @@ loop(Queue, Clock) ->
         {log, From, Time, Msg} ->
             UpdatedClock = time:update(From, Time, Clock),
             UpdatedQueue = [{From, Time, Msg} | Queue],
-            io:format("DEBUG - From: ~w, UpdatedClock: ~w, isTimeSafe: ~w ~n", [From, UpdatedClock, time:safe(Time, UpdatedClock)]),
+            %io:format("DEBUG - From: ~w, UpdatedClock: ~w, isTimeSafe: ~w ~n", [From, UpdatedClock, time:safe(Time, UpdatedClock)]),
             FilteredQueue = case time:safe(Time, UpdatedClock) of
                 true -> 
                     logAllSafeMsg(Time, UpdatedQueue),
