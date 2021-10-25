@@ -1,19 +1,24 @@
 -module(logger).
 
--export([log/1, logf/2, logf/1]).
+-export([log/3, logf/4, logf/3]).
 
-log(Message) -> 
-    io:format("[~s] | ", [timeNowf()]),
-    io:format(Message),
-    io:format("~n").
+log(Logger, Time, Message) -> 
+    Log_date = io_lib:format("[~s] | ",[timeNowf()]),
+    Log_msg = Log_date ++ Message ++ "~n",
+    io:format(Log_msg),
+    sendToLogger(Logger, Time, Log_msg).
 
-logf(Message) -> 
-    log(Message).
+logf(Logger, Time, Message) -> 
+    log(Logger, Time, Message).
 
-logf(Message, Params) -> 
-    io:format("[~s] | ", [timeNowf()]),
-    io:format(Message, Params),
-    io:format("~n").
+logf(Logger, Time, Message, Params) ->
+    Log_date = io_lib:format("[~s] | ",[timeNowf()]),
+    Log_msg = Log_date ++ io_lib:format(Message ++ "~n", Params),
+    io:format(Log_msg),
+    sendToLogger(Logger, Time, Log_msg).
+
+sendToLogger(Logger, Time, Log_msg) ->
+    Logger ! {log, node(), Time, Log_msg}.
 
 %Return time now like "yyyy-mm-ddThh:mm:ss.zZ"
 timeNowf() -> 

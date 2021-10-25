@@ -19,7 +19,7 @@
 
 ## Trabajo Práctico Final
 
-### [Rulety](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/entregas/ruleta)
+### [Ruleta](https://gitlab.com/cassa10/sistemas-distribuidos/-/blob/master/entregas/ruleta)
 
 ## Prácticas
 
