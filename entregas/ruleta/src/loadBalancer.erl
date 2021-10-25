@@ -28,9 +28,16 @@ waiting(MasterNode, Nodes, Logger, Time) ->
         {apostar, Apuesta} -> 
             N_Time = time:inc(Time),
             logger:logf(Logger, N_Time, "Se recibio apostar con Apuesta: ~w", [Apuesta]),
-            MasterNode ! {apostar, Apuesta},
+            sendApuestaToNodes(Nodes, Apuesta),
             waiting(MasterNode, Nodes, Logger, N_Time)
     end.
+
+sendApuestaToNodes(Nodes, Apuesta) ->
+    lists:foreach(
+        fun(Node) -> 
+            Node ! {apostar, Apuesta} 
+        end, Nodes).
+
 
 handlingNodeDown(NodeDown, MasterNode, Nodes, Logger, Time) ->
     logger:logf(Logger, Time, "Manejando Caida del Nodo ~w", [NodeDown]),
