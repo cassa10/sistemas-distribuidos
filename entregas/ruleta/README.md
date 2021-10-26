@@ -47,3 +47,6 @@ usuario:start(clientA, {loadBalancer, 'loadBalancer@bolddell'}).
 
 rebar3 shell --sname clientB --setcookie secret
 usuario:start(clientB, {loadBalancer, 'loadBalancer@bolddell'}).
+
+rebar3 shell --sname clientC --setcookie secret
+usuario:start(clientC, {loadBalancer, 'loadBalancer@bolddell'}).
