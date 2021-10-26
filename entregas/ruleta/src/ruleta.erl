@@ -1,6 +1,6 @@
 -module(ruleta).
 
--export([start/3]).
+-export([start/3, numberCategoryMap/1]).
 
 start(Id, Nodes, Logger) ->
     Pid = self(),
@@ -153,8 +153,8 @@ procesarApuestas(Logger, Time, Peers, NumeroGanador, Apuestas, ApuestasEnEspera)
             %TODO: Sleep de prueba
             timer:sleep(10000),
             case esGanador(NumeroGanador, CategoriaONumero) of
-                true -> pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero);
-                false -> informarPerdida(NodoUsuario, DineroApostado, CategoriaONumero)
+                true -> pagarApuesta(NodoUsuario, NumeroGanador, DineroApostado, CategoriaONumero);
+                false -> informarPerdida(NodoUsuario, NumeroGanador, DineroApostado, CategoriaONumero)
             end,
             %Replicar que la apuesta fue cobrada/pagada
             replicarApuestasProcesada(Logger, Time, Peers, Apuesta)
@@ -171,16 +171,16 @@ esGanador(NumeroGanador, CategoriaONumeroApostado) ->
         false -> lists:member(CategoriaONumeroApostado, numberCategoryMap(NumeroGanador))
     end.
 
-pagarApuesta(NodoUsuario, DineroApostado, CategoriaONumero) ->
+pagarApuesta(NodoUsuario, NumeroGanador, DineroApostado, CategoriaONumero) ->
     case CategoriaONumero of
         {numero, _} ->
-            NodoUsuario ! {ganancia, CategoriaONumero, pagarNumero(DineroApostado)};
+            NodoUsuario ! {ganancia, NumeroGanador, CategoriaONumero, pagarNumero(DineroApostado)};
         _ ->
-            NodoUsuario ! {ganancia, CategoriaONumero, pagarCategoria(DineroApostado, CategoriaONumero)}
+            NodoUsuario ! {ganancia, NumeroGanador, CategoriaONumero, pagarCategoria(DineroApostado, CategoriaONumero)}
     end.
 
-informarPerdida(NodoUsuario, DineroApostado, CategoriaONumero) ->
-    NodoUsuario ! {perdida, CategoriaONumero, DineroApostado}.
+informarPerdida(NodoUsuario, NumeroGanador, DineroApostado, CategoriaONumero) ->
+    NodoUsuario ! {perdida, NumeroGanador, CategoriaONumero, DineroApostado}.
 
 pagarNumero(Apuesta) ->
     Apuesta * 36.

@@ -1,7 +1,6 @@
 -module(usuario).
 
--export([start/2, salir/0, manejarInputUsuario/5, elegirApuesta/4, obtenerValorApuesta/1,
-    obtenerApuestaPorCategoria/4, mandarApuestas/4, esperarFinRonda/5]).
+-export([start/2]).
 
 start(Id, Server) ->
     register(Id, self()),
@@ -106,25 +105,33 @@ mandarApuestas(Server, Id, NombreUsuario, Apuestas) ->
             Server ! {apostar, {NombreUsuario, {Id, node()}, Apuesta}}
         end, Apuestas),
     ApuestaSize = sizeList(Apuestas),
-    esperarFinRonda(Server, Id, NombreUsuario, ApuestaSize, 0).
+    esperarFinRonda(Server, Id, NombreUsuario, ApuestaSize, 0, true).
 
-esperarFinRonda(Server, Id, NombreUsuario, ApuestaSize, GananciaTotal) ->
-    io:format(ioMessages:mensajeCargando()),
-    receive
-        {ganancia, CategoriaONumero, Ganancia} ->
-            io:format(ioMessages:mensajeGanancia(CategoriaONumero, Ganancia)),
-            GananciaTotalActualizado = GananciaTotal + Ganancia,
-            esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestaSize - 1, GananciaTotalActualizado);
-        {perdida, CategoriaONumero, DineroApostado} ->
-            io:format(ioMessages:mensajePerdida(CategoriaONumero, DineroApostado)),
-            esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestaSize - 1, GananciaTotal)
-        after 10000 ->
-            esperarFinRonda(Server, Id, NombreUsuario, ApuestaSize, GananciaTotal)
+chequearSiMostrarNumeroGanador(DebeMostrar, NumeroGanador) ->
+    case DebeMostrar of
+        true -> io:format(ioMessages:mensajeNumeroGanador(NumeroGanador));
+        _ -> nothing_do
     end.
 
-esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestasSize, GananciaTotal) ->
+esperarFinRonda(Server, Id, NombreUsuario, ApuestaSize, GananciaTotal, IsFirstTime) ->
+    io:format(ioMessages:mensajeCargando()),
+    receive
+        {ganancia, NumeroGanador, CategoriaONumero, Ganancia} ->
+            chequearSiMostrarNumeroGanador(IsFirstTime, NumeroGanador),
+            io:format(ioMessages:mensajeGanancia(CategoriaONumero, Ganancia)),
+            GananciaTotalActualizado = GananciaTotal + Ganancia,
+            esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestaSize - 1, GananciaTotalActualizado, false);
+        {perdida, NumeroGanador, CategoriaONumero, DineroApostado} ->
+            chequearSiMostrarNumeroGanador(IsFirstTime, NumeroGanador),
+            io:format(ioMessages:mensajePerdida(CategoriaONumero, DineroApostado)),
+            esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestaSize - 1, GananciaTotal, false)
+        after 10000 ->
+            esperarFinRonda(Server, Id, NombreUsuario, ApuestaSize, GananciaTotal, IsFirstTime)
+    end.
+
+esperarFinRondaSiCorresponde(Server, Id, NombreUsuario, ApuestasSize, GananciaTotal, IsFirstTime) ->
     if
-        ApuestasSize > 0 -> esperarFinRonda(Server, Id, NombreUsuario, ApuestasSize, GananciaTotal);
+        ApuestasSize > 0 -> esperarFinRonda(Server, Id, NombreUsuario, ApuestasSize, GananciaTotal, IsFirstTime);
         true -> 
             io:format(ioMessages:mensajeGananciaTotal(GananciaTotal)),
             io:format(ioMessages:mensajeFinDeRonda()),

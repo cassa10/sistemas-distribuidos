@@ -1,6 +1,6 @@
 -module(ioMessages).
 
--export([formatApuestas/1, mensajePrincipal/2, mensajeApuesta/0, mensajeSeleccionarCategoria/0,
+-export([formatApuestas/1, mensajePrincipal/2, mensajeApuesta/0, mensajeSeleccionarCategoria/0, mensajeNumeroGanador/1,
     mensajeDarValorApuesta/0, mensajeDarValorPleno/0, mensajeGanancia/2, mensajeCargando/0, mensajeConfirmacion/0,
     errorValorApuesta/0, errorValorPleno/0, errorOpcionInvalida/0, errorOpcionInvalidaHome/0, mensajeFinDeRonda/0,
     mensajeGananciaTotal/1, mensajePerdida/2, mensajeIngresarUsuario/0, usuarioInvalido/0, errorSinApuestas/0]).
@@ -95,3 +95,6 @@ mensajeFinDeRonda() ->
     "|----------------------------------------------------------|\n" ++
     "|                     Fin de Ronda                         |\n" ++
     "|----------------------------------------------------------|\n".
+
+mensajeNumeroGanador(NumeroGanador) ->
+    io_lib:format("~n NUMERO GANADOR: ~w - CON CATEGORIAS: ~w ~n",[NumeroGanador, ruleta:numberCategoryMap(NumeroGanador)]).
